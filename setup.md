@@ -1,65 +1,42 @@
-## setup
+## setup (mac)
 
-python3 -m venv .venv
+brew install pyenv
+
+pyenv versions          # check if a 3.11.x is already installed
+
+pyenv install 3.11.9    # skip this step if 3.11.x already shows up above
+
+~/.pyenv/versions/3.11.9/bin/python -m venv .venv
+
 source .venv/bin/activate
+
+python --version 
+
+_should print Python 3.11.x (any 3.11 patch version works — wheels for torch==2.1.0 are built per minor version, not patch)_
 
 pip install --upgrade pip
 
 pip install -r requirements.txt
 
-### Whisper + Legacy Transcript Data (does not function with severely corrupted files like LCOH)
+### Run Script(s)
 
-python script.py
+python script_
 
-### Whisper + Programmatic Speaker Diarization which looks for questions to separate speakers
+_Keep device and/or display awake while processing_
 
-python script_b.py
+caffeinate -s python script_
 
-### Whisper + Speechbrain Speaker Diarization + programmatic speech clustering
+caffeinate -di python script_
 
-python script_c.py
+_Or run multiple scripts on the same audio files_
 
-### Whisper + SpeechBrain and Solera VAD for Speaker Diarization
-
-python script_d.py
-
-### All of the elements, including heuristic question determination from script_b
-
-python script_e.py
-
-### Resolve file naming discrepancies through CSV metadata, replace speaker names and change file name to item level
-
+caffeinate -di bash -c '
+python script_a.py;
+python script_b.py;
+python script_c.py;
+python script_d.py;
+python script_e.py;
 python script_f.py
+'
 
-### Replace file name only -- no speaker name change attempts
-
-python script_g.py
-
-### Cluster dialogue from same speakers from over-parsed Premiere transcripts
-
-python script_h.py
-
-### Correct "said" heuristic judgement
-
-python script_i.py
-
-### Keep monitor awake for batch processing
-
-caffeinate -s python script
-
-caffeinate -di python script
-
-## Current Workflow
-
-**E > F**
-
-### Whisper model configuration:
-
-- Best balance of speed and accuracy: small.en (if all recordings are in English)
-- self.model = whisper.load_model("small.en")
-
-- Higher accuracy with moderate speed: medium.en (if all recordings are in English)
-- self.model = whisper.load_model("medium.en")
-
-- Highest accuracy (if resources allow): large-v3
-- self.model = whisper.load_model("large-v3")
+_More information on workflow included in the README_
