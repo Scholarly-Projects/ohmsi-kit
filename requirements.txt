@@ -1,0 +1,22 @@
+# --- Core Processing ---
+numpy>=1.24.0,<2.0.0
+torch==2.1.0
+torchaudio==2.1.0
+
+# --- Transcription & Diarization ---
+openai-whisper>=20230314
+speechbrain==1.0.3
+soundfile>=0.12.0
+silero-vad>=6.2.0
+scikit-learn>=1.5.0
+huggingface_hub<1.0.0
+
+# --- Data & Utilities ---
+pandas>=1.5.0
+setuptools>=60.0.0
+wheel>=0.37.0
+rapidfuzz>=3.0.0,<4.0.0
+
+# --- script_f.py: Semantic Speaker Reconciliation ---
+# Sentence-transformers pinned to work with torch==2.1.0
+sentence-transformers>=2.6.0,<3.0.0
