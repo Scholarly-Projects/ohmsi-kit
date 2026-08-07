@@ -66,19 +66,19 @@ source .venv/bin/activate
 
 _Windows:_
 
-python said.py /c/Users/mkoepele/Documents/GitHub/oral-history-collections-template/_data/transcripts/demus_gus_3.csv
+python said.py /c/Users/GitHubName/Documents/GitHub/ohmsi-kit/_data/B/example_transcript.csv
 
 or
 
-python cluster.py /c/Users/mkoepele/Documents/GitHub/oral-history-collections-template/_data/transcripts/demus_gus_3.csv
+python cluster.py /c/Users/GitHubName/Documents/GitHub/ohmsi-kit/_data/B/example_transcript.csv
 
 _Mac:_
 
-python3 said.py /Users/aweymouth@uidaho.edu/Documents/GitHub/oral-history-collections-template/_data/transcripts/flodin_elmer_2.csv
+python3 said.py /Users/GitHubName/Documents/GitHub/ohmsi-kit/_data/B/example_transcript.csv
 
 or
 
-python3 cluster.py /Users/aweymouth@uidaho.edu/Documents/GitHub/oral-history-collections-template/_data/transcripts/flodin_elmer_2.csv
+python3 cluster.py /Users/GitHubName/Documents/GitHub/ohmsi-kit/_data/B/example_transcript.csv
 
 # Other Workflows
 
@@ -86,11 +86,11 @@ python3 cluster.py /Users/aweymouth@uidaho.edu/Documents/GitHub/oral-history-col
 
 _Windows:_
 
-sed -i 's/\([0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}\):[0-9]\{2\}/\1/g' /c/Users/mkoepele/Documents/github/oral-history-collections-template/_data/transcripts/demus_gus_3.csv
+sed -i 's/\([0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}\):[0-9]\{2\}/\1/g' /c/Users/GitHubName/Documents/github/ohmsi-kit/_data/B/example_transcript.csv
 
 _Mac:_
 
-sed -i '' 's/\([0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}\):[0-9]\{2\}/\1/g' /Users/aweymouth@uidaho.edu/Documents/GitHub/oral-history-collections-template/_data/transcripts/flodin_elmer_2.csv 
+sed -i '' 's/\([0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}\):[0-9]\{2\}/\1/g' /Users/GitHubName/Documents/GitHub/ohmsi-kit/_data/B/example_transcript.csv 
 
 ## To switch columns C and D (retain but not focus on End Time field if this is a Premiere Transcript)
 
@@ -98,7 +98,7 @@ _Windows:_
 
 python -c "
 import csv
-path = 'C:/Users/mkoepele/Documents/github/oral-history-collections-template/_data/transcripts/demus_gus_3.csv'
+path = 'C:/Users/GitHubName/Documents/github/ohmsi-kit/_data/B/example_transcript.csv'
 rows = list(csv.reader(open(path)))
 out = [[r[0],r[1],r[3],r[2]]+r[4:] if len(r)>3 else r for r in rows]
 csv.writer(open(path,'w',newline='')).writerows(out)
@@ -108,9 +108,9 @@ _Mac:_
 
 python3 -c "
 import csv, sys
-rows = list(csv.reader(open('$(echo /Users/aweymouth@uidaho.edu/Documents/GitHub/oral-history-collections-template/_data/transcripts/mckeever_george_1.csv)')))
+rows = list(csv.reader(open('$(echo /Users/GitHubName/Documents/GitHub/ohmsi-kit/_data/B/mckeever_george_1.csv)')))
 out = [[r[0],r[1],r[3],r[2]]+r[4:] if len(r)>3 else r for r in rows]
-csv.writer(open('$(echo /Users/aweymouth@uidaho.edu/Documents/GitHub/oral-history-collections-template/_data/transcripts/mckeever_george_1.csv)','w',newline='')).writerows(out)
+csv.writer(open('$(echo /Users/GitHubName/Documents/GitHub/ohmsi-kit/_data/B/mckeever_george_1.csv)','w',newline='')).writerows(out)
 "
 
 ## To remove empty line breaks from CSV (occasional Premiere bug)
@@ -119,7 +119,7 @@ _Windows:_
 
 python -c "
 import csv
-path = 'C:/Users/mkoepele/Documents/github/oral-history-collections-template/_data/transcripts/demus_gus_3.csv'
+path = 'C:/Users/GitHubName/Documents/github/ohmsi-kit/_data/B/example_transcript.csv'
 rows = list(csv.reader(open(path)))
 clean = [r for r in rows if any(field.strip() for field in r)]
 csv.writer(open(path,'w',newline='')).writerows(clean)
@@ -129,7 +129,7 @@ _Mac:_
 
 python3 -c "
 import csv
-path = '/Users/aweymouth@uidaho.edu/Documents/GitHub/oral-history-collections-template/_data/transcripts/mckeever_george_1.csv'
+path = '/Users/GitHubName/Documents/GitHub/ohmsi-kit/_data/B/mckeever_george_1.csv'
 rows = list(csv.reader(open(path)))
 clean = [r for r in rows if any(field.strip() for field in r)]
 csv.writer(open(path, 'w', newline='')).writerows(clean)
@@ -141,7 +141,7 @@ _Windows:_
 
 python -c "
 import re
-path = 'C:/Users/mkoepele/Documents/github/oral-history-collections-template/_data/transcripts/demus_gus_3.csv'
+path = 'C:/Users/GitHubName/Documents/github/ohmsi-kit/_data/B/example_transcript.csv'
 content = open(path, encoding='utf-8').read()
 content = re.sub(r'\"([a-z])', lambda m: '\"' + m.group(1).upper(), content)
 open(path, 'w', encoding='utf-8', newline='').write(content)
@@ -149,32 +149,32 @@ open(path, 'w', encoding='utf-8', newline='').write(content)
 
 _Mac:_
 
-perl -i -pe 's/"([a-z])/\"\u$1/g' /Users/aweymouth@uidaho.edu/Documents/GitHub/oral-history-collections-template/_data/transcripts/platz_ima_1.csv
+perl -i -pe 's/"([a-z])/\"\u$1/g' /Users/GitHubName/Documents/GitHub/ohmsi-kit/_data/B/platz_ima_1.csv
 
 ## Change speaker names for specific sections:
 
 _Windows:_
 
 awk 'BEGIN{FS=OFS=","} {gsub(/\r/,"")} NR>=66 && NR<=149 && $1=="Karen Purtee" {$1="Helena Cartwright Carlson"} 1' \
-  "/c/Users/mkoepele/Documents/github/oral-history-collections-template/_data/transcripts/demus_gus_3.csv" > \
-  "/c/Users/mkoepele/Documents/github/oral-history-collections-template/_data/transcripts/tmp.csv" && \
-  mv "/c/Users/mkoepele/Documents/github/oral-history-collections-template/_data/transcripts/tmp.csv" \
-     "/c/Users/mkoepele/Documents/github/oral-history-collections-template/_data/transcripts/demus_gus_3.csv"
+  "/c/Users/GitHubName/Documents/github/ohmsi-kit/_data/B/example_transcript.csv" > \
+  "/c/Users/GitHubName/Documents/github/ohmsi-kit/_data/B/tmp.csv" && \
+  mv "/c/Users/GitHubName/Documents/github/ohmsi-kit/_data/B/tmp.csv" \
+     "/c/Users/GitHubName/Documents/github/ohmsi-kit/_data/B/example_transcript.csv"
 
 _Mac:_
 
 awk 'BEGIN{FS=OFS=","} {gsub(/\r/,"")} NR>=66 && NR<=149 && $1=="Karen Purtee" {$1="Helena Cartwright Carlson"} 1' \
-  "/Users/aweymouth/Documents/GitHub/oral-history-collections-template/_data/transcripts/carlson_helena_2.csv" > \
-  "/Users/aweymouth/Documents/GitHub/oral-history-collections-template/_data/transcripts/tmp.csv" && \
-  mv "/Users/aweymouth/Documents/GitHub/oral-history-collections-template/_data/transcripts/tmp.csv" \
-     "/Users/aweymouth/Documents/GitHub/oral-history-collections-template/_data/transcripts/carlson_helena_2.csv"
+  "/Users/aweymouth/Documents/GitHub/ohmsi-kit/_data/B/carlson_helena_2.csv" > \
+  "/Users/aweymouth/Documents/GitHub/ohmsi-kit/_data/B/tmp.csv" && \
+  mv "/Users/aweymouth/Documents/GitHub/ohmsi-kit/_data/B/tmp.csv" \
+     "/Users/aweymouth/Documents/GitHub/ohmsi-kit/_data/B/carlson_helena_2.csv"
 
 ## Add missing punctuation at the end of a row of dialogue (remove period from header after). Does not work if dialogue is missing punctuation inside of dialogue.
 
 python3 -c "
 import csv
 
-path = '/Users/aweymouth/Documents/GitHub/oral-history-collections-template/_data/transcripts/holland_joseph_2.csv'
+path = '/Users/aweymouth/Documents/GitHub/ohmsi-kit/_data/B/holland_joseph_2.csv'
 
 with open(path, newline='', encoding='utf-8') as f:
     rows = list(csv.reader(f))
