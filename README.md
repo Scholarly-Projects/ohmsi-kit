@@ -10,7 +10,7 @@ This kit was developed over time to facilitate the transcription of the [Latah C
 
 Future iterations of ohmsi-kit will include an editing workspace where users can open processed transcriptions locally to aid and streamline the copyediting process, leveraging Oral History as Data’s playback interface and Visual Studio Code’s user dictionary capabilities. Other advancements may include automated sequential processing of audio files based on a programmatic survey that evaluates transcripts for accurate dialogue clustering.
 
-_Andrew Weymouth, Summer, 2026_
+_Andrew Weymouth, Summer 2026._
 
 <details>
 <summary><h2>ohmsi-kit Workflow</h2></summary>
