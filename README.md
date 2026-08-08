@@ -47,6 +47,93 @@ A tiered workflow for creating oral history transcriptions that implements vario
 * `Script\_f` is a last resort to salvage extremely compromised audio. Instead of attempting to identify and label speakers, the script separates clusters of speech by a `PAUSE\_THRESHOLD` that can be adjusted in the configuration section of the script.  
     * This CSV output is ideal if you simply need to have the most likely transcription of the audio with no speaker differentiation. For greater accuracy, run the audio through Adobe Premiere’s transcription model, [using my workshop](https://aweymo-ui.github.io/premiere_transcripts/) for reference. The Premiere transcription will likely have improved diarization but inferior translation than this script. Using the Premiere transcript as a base, update with Whisper’s more accurate translation to salvage and synthesize results.
 
+## Script Setup (Mac)
+
+```bash
+brew install pyenv
+pyenv versions          # check if a 3.11.x is already installed
+pyenv install 3.11.9    # skip this step if 3.11.x already shows up above
+~/.pyenv/versions/3.11.9/bin/python -m venv .venv
+source .venv/bin/activate
+```
+```bash
+`python --version`
+```
+_should print Python 3.11.x (any 3.11 patch version works — wheels for torch==2.1.0 are built per minor version, not patch)_
+
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### Run Script(s)
+
+```bash
+python script_
+```
+
+_Keep device and/or display awake while processing_
+
+```bash
+caffeinate -s python script_
+caffeinate -di python script_
+```
+
+_Or run multiple scripts on the same audio files_
+
+```bash
+caffeinate -di bash -c '
+python script_a.py;
+python script_b.py;
+python script_c.py;
+python script_d.py;
+python script_e.py;
+python script_f.py
+'
+```
+
+## Script Setup (Windows)
+
+```powershell
+choco install pyenv-win
+pyenv versions          # check if a 3.11.x is already installed
+pyenv install 3.11.9    # skip this step if 3.11.x already shows up above
+& "$env:USERPROFILE\.pyenv\pyenv-win\versions\3.11.9\python.exe" -m venv .venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass   # only needed if activation is blocked
+.venv\Scripts\Activate.ps1
+```
+```bash
+`python --version`
+```
+_should print Python 3.11.x (any 3.11 patch version works — wheels for torch==2.1.0 are built per minor version, not patch)_
+
+```powershell
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### Run Script(s)
+
+```powershell
+python script_
+```
+
+_Keep device and/or display awake while processing_
+
+Windows has no direct `caffeinate` equivalent. Check your current timeout values first (`powercfg /query`), then temporarily set them to 0 and restore your originals after:
+```powershell
+powercfg /change standby-timeout-ac 0
+powercfg /change monitor-timeout-ac 0
+python script_
+# restore your original values here when done
+```
+
+_Or run multiple scripts on the same audio files_
+
+```powershell
+python script_a.py; python script_b.py; python script_c.py; python script_d.py; python script_e.py; python script_f.py
+```
+
 ## Supplemental Workflows
 
 - **said.py**: Fixes a weakness in script_e where an interviewee is mis-identified as the interviewer is posing questions. This frequently comes up if a speaker is prone to recounting things like "... and then she said, why did you do that?". On running the script, these phrases are identified and the speaker column is replaced with `interviewee`, which you can find and replace with that interviewees name after running the script.
@@ -60,11 +147,15 @@ A tiered workflow for creating oral history transcriptions that implements vario
 
 _Windows:_
 
-python --version
+```bash
+`python --version`
+```
 
 _Mac:_
 
+```bash
 python3 --version
+```
 
 _Make sure you are newer than 3.8._
 
@@ -72,48 +163,65 @@ _Make sure you are newer than 3.8._
 
 _Windows:_
 
+```bash
 python -m venv .venv
 source .venv/Scripts/activate
+```
 
 _Mac:_
 
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
+```
 
 **Replace with the path of the file you want to adjust**
 
 _Windows:_
 
+```bash
 python said.py /c/Users/GitHubName/Documents/GitHub/ohmsi-kit/B/example_transcript.csv
+```
 
 or
 
+```bash
 python cluster.py /c/Users/GitHubName/Documents/GitHub/ohmsi-kit/B/example_transcript.csv
+```
 
 _Mac:_
 
+```bash
 python3 said.py /Users/GitHubName/Documents/GitHub/ohmsi-kit/B/example_transcript.csv
+```
 
 or
 
+```bash
 python3 cluster.py /Users/GitHubName/Documents/GitHub/ohmsi-kit/B/example_transcript.csv
+```
 
-## Additional Workflows
+## Premiere Transcript Remediation Workflows
 
-### Remove millisecond from Premiere transcripts:
+### Remove Millisecond from Timestamps
 
 _Windows:_
 
+```bash
 sed -i 's/\([0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}\):[0-9]\{2\}/\1/g' /c/Users/GitHubName/Documents/github/ohmsi-kit/B/example_transcript.csv
+```
 
 _Mac:_
 
+```bash
 sed -i '' 's/\([0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}\):[0-9]\{2\}/\1/g' /Users/GitHubName/Documents/GitHub/ohmsi-kit/B/example_transcript.csv 
+```
 
-### Switch columns C and D (Premiere Stop Time fix)
+### Switch Columns C and D for Copy Editing Dialogue
 
 _Windows:_
 
+```bash
 python -c "
 import csv
 path = 'C:/Users/GitHubName/Documents/github/ohmsi-kit/B/example_transcript.csv'
@@ -121,20 +229,24 @@ rows = list(csv.reader(open(path)))
 out = [[r[0],r[1],r[3],r[2]]+r[4:] if len(r)>3 else r for r in rows]
 csv.writer(open(path,'w',newline='')).writerows(out)
 "
+```
 
 _Mac:_
 
+```bash
 python3 -c "
 import csv, sys
-rows = list(csv.reader(open('$(echo /Users/GitHubName/Documents/GitHub/ohmsi-kit/B/mckeever_george_1.csv)')))
+rows = list(csv.reader(open('$(echo /Users/GitHubName/Documents/GitHub/ohmsi-kit/B/example_transcript.csv)')))
 out = [[r[0],r[1],r[3],r[2]]+r[4:] if len(r)>3 else r for r in rows]
-csv.writer(open('$(echo /Users/GitHubName/Documents/GitHub/ohmsi-kit/B/mckeever_george_1.csv)','w',newline='')).writerows(out)
+csv.writer(open('$(echo /Users/GitHubName/Documents/GitHub/ohmsi-kit/B/example_transcript.csv)','w',newline='')).writerows(out)
 "
+```
 
-## To remove empty line breaks from CSV (occasional Premiere bug)
+## Remove Empty Rows Between Dialogue (occasional Premiere bug)
 
 _Windows:_
 
+```bash
 python -c "
 import csv
 path = 'C:/Users/GitHubName/Documents/github/ohmsi-kit/B/example_transcript.csv'
@@ -142,21 +254,25 @@ rows = list(csv.reader(open(path)))
 clean = [r for r in rows if any(field.strip() for field in r)]
 csv.writer(open(path,'w',newline='')).writerows(clean)
 "
+```
 
 _Mac:_
 
+```bash
 python3 -c "
 import csv
-path = '/Users/GitHubName/Documents/GitHub/ohmsi-kit/B/mckeever_george_1.csv'
+path = '/Users/GitHubName/Documents/GitHub/ohmsi-kit/B/example_transcript.csv'
 rows = list(csv.reader(open(path)))
 clean = [r for r in rows if any(field.strip() for field in r)]
 csv.writer(open(path, 'w', newline='')).writerows(clean)
 "
+```
 
-## Capitalize the first letter in a new row of dialogue (occasional Premiere and Whisper bug)
+## Capitalize First Letter in a New Row of Dialogue (occasional Premiere and Whisper bug)
 
 _Windows:_
 
+```bash
 python -c "
 import re
 path = 'C:/Users/GitHubName/Documents/github/ohmsi-kit/B/example_transcript.csv'
@@ -164,67 +280,71 @@ content = open(path, encoding='utf-8').read()
 content = re.sub(r'\"([a-z])', lambda m: '\"' + m.group(1).upper(), content)
 open(path, 'w', encoding='utf-8', newline='').write(content)
 "
+```
 
 _Mac:_
 
+```bash
 perl -i -pe 's/"([a-z])/\"\u$1/g' /Users/GitHubName/Documents/GitHub/ohmsi-kit/B/platz_ima_1.csv
+```
 
-## Change speaker names for specific sections:
+## Change Speaker Names for Specific Sections:
 
 _Windows:_
 
+```bash
 awk 'BEGIN{FS=OFS=","} {gsub(/\r/,"")} NR>=66 && NR<=149 && $1=="Karen Purtee" {$1="Helena Cartwright Carlson"} 1' \
   "/c/Users/GitHubName/Documents/github/ohmsi-kit/B/example_transcript.csv" > \
   "/c/Users/GitHubName/Documents/github/ohmsi-kit/B/tmp.csv" && \
   mv "/c/Users/GitHubName/Documents/github/ohmsi-kit/B/tmp.csv" \
      "/c/Users/GitHubName/Documents/github/ohmsi-kit/B/example_transcript.csv"
+```
 
 _Mac:_
 
+```bash
 awk 'BEGIN{FS=OFS=","} {gsub(/\r/,"")} NR>=66 && NR<=149 && $1=="Karen Purtee" {$1="Helena Cartwright Carlson"} 1' \
   "/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/carlson_helena_2.csv" > \
   "/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/tmp.csv" && \
   mv "/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/tmp.csv" \
      "/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/carlson_helena_2.csv"
+```
 
-## Add missing punctuation at the end of a row of dialogue (remove period from header after). Does not work if dialogue is missing punctuation inside of dialogue.
+### Add Missing Punctuation at the End of a Row of Dialogue (remove period from header after). 
 
+_Does not work if dialogue is missing punctuation inside of dialogue._
+
+
+```bash
 python3 -c "
 import csv
-
-path = '/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/holland_joseph_2.csv'
-
+path = '/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/example_transcript.csv'
 with open(path, newline='', encoding='utf-8') as f:
     rows = list(csv.reader(f))
-
 header = rows[0]
 header = [h.rstrip('.?!') for h in header]
 rows[0] = header
-
 with open(path, 'w', newline='', encoding='utf-8') as f:
     csv.writer(f).writerows(rows)
-
 with open(path, newline='', encoding='utf-8') as f:
     reader = csv.DictReader(f)
     fieldnames = reader.fieldnames
     rows = list(reader)
-
 for row in rows:
     text = row['words'].rstrip()
     if not text:
         continue
-    if text[-1] == '\"' and len(text) > 1:
+    if text[-1] == '"' and len(text) > 1:
         core = text[:-1]
         if core and core[-1] not in '.?!':
-            text = core + '.\"'
+            text = core + '."'
     elif text[-1] not in '.?!':
         text = text + '.'
     row['words'] = text
-
 with open(path, 'w', newline='', encoding='utf-8') as f:
     writer = csv.DictWriter(f, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerows(rows)
-
 print('Done.')
 "
+```
