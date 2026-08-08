@@ -142,7 +142,7 @@ python script_a.py; python script_b.py; python script_c.py; python script_d.py; 
 </details>
 
 <details>
-<summary><h2>Supplemental Workflows</h2></summary>
+<summary><h2>Supplemental Python Workflows</h2></summary>
 
 - **said.py**: Fixes a weakness in script_e where an interviewee is mis-identified as the interviewer is posing questions. This frequently comes up if a speaker is prone to recounting things like "... and then she said, why did you do that?". On running the script, these phrases are identified and the speaker column is replaced with `interviewee`, which you can find and replace with that interviewee's name after running the script.
 
@@ -206,6 +206,66 @@ or
 
 ```bash
 python3 cluster.py /Users/GitHubName/Documents/GitHub/ohmsi-kit/B/example_transcript.csv
+```
+
+### Change Speaker Names for Specific Sections
+
+_Windows:_
+
+```bash
+awk 'BEGIN{FS=OFS=","} {gsub(/\r/,"")} NR>=66 && NR<=149 && $1=="Karen Purtee" {$1="Helena Cartwright Carlson"} 1' \
+  "/c/Users/GitHubName/Documents/github/ohmsi-kit/B/example_transcript.csv" > \
+  "/c/Users/GitHubName/Documents/github/ohmsi-kit/B/tmp.csv" && \
+  mv "/c/Users/GitHubName/Documents/github/ohmsi-kit/B/tmp.csv" \
+     "/c/Users/GitHubName/Documents/github/ohmsi-kit/B/example_transcript.csv"
+```
+
+_Mac:_
+
+```bash
+awk 'BEGIN{FS=OFS=","} {gsub(/\r/,"")} NR>=66 && NR<=149 && $1=="Karen Purtee" {$1="Helena Cartwright Carlson"} 1' \
+  "/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/carlson_helena_2.csv" > \
+  "/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/tmp.csv" && \
+  mv "/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/tmp.csv" \
+     "/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/carlson_helena_2.csv"
+```
+
+### Add Missing Punctuation at the End of a Row of Dialogue
+
+_Removes the period from the header first; does not work if dialogue is missing punctuation inside of the dialogue itself._
+
+```bash
+python3 -c "
+import csv
+path = '/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/example_transcript.csv'
+with open(path, newline='', encoding='utf-8') as f:
+    rows = list(csv.reader(f))
+header = rows[0]
+header = [h.rstrip('.?!') for h in header]
+rows[0] = header
+with open(path, 'w', newline='', encoding='utf-8') as f:
+    csv.writer(f).writerows(rows)
+with open(path, newline='', encoding='utf-8') as f:
+    reader = csv.DictReader(f)
+    fieldnames = reader.fieldnames
+    rows = list(reader)
+for row in rows:
+    text = row['words'].rstrip()
+    if not text:
+        continue
+    if text[-1] == '"' and len(text) > 1:
+        core = text[:-1]
+        if core and core[-1] not in '.?!':
+            text = core + '."'
+    elif text[-1] not in '.?!':
+        text = text + '.'
+    row['words'] = text
+with open(path, 'w', newline='', encoding='utf-8') as f:
+    writer = csv.DictWriter(f, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(rows)
+print('Done.')
+"
 ```
 
 </details>
@@ -296,66 +356,6 @@ _Mac:_
 
 ```bash
 perl -i -pe 's/"([a-z])/\"\u$1/g' /Users/GitHubName/Documents/GitHub/ohmsi-kit/B/platz_ima_1.csv
-```
-
-### Change Speaker Names for Specific Sections
-
-_Windows:_
-
-```bash
-awk 'BEGIN{FS=OFS=","} {gsub(/\r/,"")} NR>=66 && NR<=149 && $1=="Karen Purtee" {$1="Helena Cartwright Carlson"} 1' \
-  "/c/Users/GitHubName/Documents/github/ohmsi-kit/B/example_transcript.csv" > \
-  "/c/Users/GitHubName/Documents/github/ohmsi-kit/B/tmp.csv" && \
-  mv "/c/Users/GitHubName/Documents/github/ohmsi-kit/B/tmp.csv" \
-     "/c/Users/GitHubName/Documents/github/ohmsi-kit/B/example_transcript.csv"
-```
-
-_Mac:_
-
-```bash
-awk 'BEGIN{FS=OFS=","} {gsub(/\r/,"")} NR>=66 && NR<=149 && $1=="Karen Purtee" {$1="Helena Cartwright Carlson"} 1' \
-  "/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/carlson_helena_2.csv" > \
-  "/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/tmp.csv" && \
-  mv "/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/tmp.csv" \
-     "/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/carlson_helena_2.csv"
-```
-
-### Add Missing Punctuation at the End of a Row of Dialogue
-
-_Removes the period from the header first; does not work if dialogue is missing punctuation inside of the dialogue itself._
-
-```bash
-python3 -c "
-import csv
-path = '/Users/aweymouth/Documents/GitHub/ohmsi-kit/B/example_transcript.csv'
-with open(path, newline='', encoding='utf-8') as f:
-    rows = list(csv.reader(f))
-header = rows[0]
-header = [h.rstrip('.?!') for h in header]
-rows[0] = header
-with open(path, 'w', newline='', encoding='utf-8') as f:
-    csv.writer(f).writerows(rows)
-with open(path, newline='', encoding='utf-8') as f:
-    reader = csv.DictReader(f)
-    fieldnames = reader.fieldnames
-    rows = list(reader)
-for row in rows:
-    text = row['words'].rstrip()
-    if not text:
-        continue
-    if text[-1] == '"' and len(text) > 1:
-        core = text[:-1]
-        if core and core[-1] not in '.?!':
-            text = core + '."'
-    elif text[-1] not in '.?!':
-        text = text + '.'
-    row['words'] = text
-with open(path, 'w', newline='', encoding='utf-8') as f:
-    writer = csv.DictWriter(f, fieldnames=fieldnames)
-    writer.writeheader()
-    writer.writerows(rows)
-print('Done.')
-"
 ```
 
 </details>
