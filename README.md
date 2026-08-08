@@ -2,7 +2,7 @@
 
 Oral History Multi-Speaker Interpretation-Kit
 
-A tiered workflow for creating oral history transcriptions that implements various Whisper models for speech-to-text recognition and SpeechBrain for speaker diarization. The kit is organized to batch process collections of recordings, outputting a CSV file with timestamps and dialogue separated by speaker. Python scripts are designed to batch process the greatest number of recordings first, then apply more advanced scripts to more difficult recordings. Elements such as low audio fidelity, suboptimal recording environments, crosstalk, and vocal similarity between speakers which may introduce errors into Whisper's pattern recognition, and result in dialogue clusters being underparsed or punctuation being dropped.
+A tiered workflow for creating oral history transcriptions that implements various Whisper models for speech-to-text recognition and SpeechBrain for _diarization_, or the process of sorting an audio recording into segments that show who is speaking when. The kit is organized to batch process collections of recordings, outputting a CSV file with timestamps and dialogue separated by speaker. Python scripts are designed to batch process the greatest number of recordings first, then apply more advanced scripts to more difficult recordings. Elements such as low audio fidelity, suboptimal recording environments, crosstalk, and vocal similarity between speakers which may introduce errors into Whisper's pattern recognition, and result in dialogue clusters being underparsed or punctuation being dropped.
 
 <details>
 <summary><h2>ohmsi-kit Workflow</h2></summary>
@@ -45,7 +45,7 @@ A tiered workflow for creating oral history transcriptions that implements vario
 * `script_e` adds another level of manual control. Whisper biometrics for identifying and labeling speakers is supplemented with heuristic rules for finding the interviewer by identifying questions being posed throughout the interview. Additionally, you can force breaks in dialogue manually by adjusting the `PAUSE_THRESHOLD` number in the configuration. This can be a helpful backup script in circumstances where interviewer and interviewee language is more formal.
     * That said, this interviewer designation is programmatic rather than relying on the nuance of the Whisper and SpeechBrain models and may result in needing to correct certain elements of the transcript in future copy editing processes.
 * `script_f` is a last resort to salvage extremely compromised audio. Instead of attempting to identify and label speakers, the script separates clusters of speech by a `PAUSE_THRESHOLD` that can be adjusted in the configuration section of the script.
-    * This CSV output is ideal if you simply need to have the most likely transcription of the audio with no speaker differentiation. For greater accuracy, run the audio through Adobe Premiere's transcription model, [using my workshop](https://aweymo-ui.github.io/premiere_transcripts/) for reference. The Premiere transcription will likely have improved diarization but inferior translation than this script. Using the Premiere transcript as a base, update with Whisper's more accurate translation to salvage and synthesize results.
+    * This CSV output is ideal if you simply need to have accurate transcription of the audio with no speaker diarization. For greater accuracy, run the audio through Adobe Premiere's transcription model, [using my workshop](https://aweymo-ui.github.io/premiere_transcripts/) for reference. The Premiere transcription will likely have improved diarization but inferior translation than this script. Using the Premiere transcript as a base, update with Whisper's more accurate translation to salvage and synthesize results.
 
 </details>
 
@@ -361,7 +361,7 @@ perl -i -pe 's/"([a-z])/\"\u$1/g' /Users/GitHubName/Documents/GitHub/ohmsi-kit/B
 </details>
 
 <details>
-<summary><h2>Copy Editing Overview</h2></summary>
+<summary><h2>Copy Editing Workflows</h2></summary>
 
 This overview assumes you're keeping basic tracking notes (e.g. a `notes.md` file) and a shared reference list of proper nouns (e.g. a `semantic-list.md` file) alongside your transcripts. These are suggested conventions, not required infrastructure — adapt them to whatever tracking method works for your project.
 
