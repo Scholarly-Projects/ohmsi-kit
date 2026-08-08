@@ -2,7 +2,7 @@
 
 __Oral History Multi-Speaker Interpretation-Kit__
 
-A tiered workflow for creating oral history transcriptions that implements various Whisper models for speech-to-text recognition and SpeechBrain for _diarization_, or the process of sorting an audio recording into segments that indicate _who is speaking when_. The kit is organized to batch process collections of recordings, outputting a CSV file with timestamps and dialogue separated by speaker. Both Whisper and SpeechBrain are open source, do not require login or tokens to access and run locally once their pre-trained models are downloaded.
+A tiered workflow for creating oral history transcriptions that implements various Whisper models for speech-to-text recognition and SpeechBrain for _diarization_, or the process of sorting an audio recording into segments that indicate _who is speaking when_. The kit is organized to batch process collections of recordings, outputting a CSV file with timestamps and dialogue separated by speaker. Both Whisper and SpeechBrain are open source, do not require login or tokens to access and **run locally** once their pre-trained models are downloaded.
 
 The Python scripts are designed to batch process the greatest number of recordings first, then apply more advanced scripts to more difficult recordings. Elements such as low audio fidelity, suboptimal recording environments, crosstalk, and vocal similarity between speakers may introduce errors into Whisper's pattern recognition, and result in dialogue clusters being under parsed or punctuation being dropped, which the kit's more advanced scripts can help mediate.
 
