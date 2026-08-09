@@ -16,7 +16,7 @@ from sklearn.cluster import AgglomerativeClustering
 # =============================================================================
 NUM_SPEAKERS = 3
 DISTANCE_THRESHOLD = 0.65
-WHISPER_MODEL = "medium.en"
+WHISPER_MODEL = "medium"
 INPUT_DIR = "A"
 OUTPUT_DIR = "B"
 # =============================================================================
