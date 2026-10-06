@@ -5,8 +5,7 @@
     {% if page.source_csv %}
     <p class="mb-2">
       <b>Transcript:</b> <span class="me-3"><code>{{ page.source_csv }}</code> ({{ page.row_count }} lines)</span><br>
-      <b>Recording:</b> <span class="me-3">{% if page.audio %}<code>{{ page.audio.path }}</code>{% if page.audio.playback_copy %} <span class="text-muted small">(playing an MP3 copy)</span>{% endif %}{% else %}not found{% endif %}</span><br>
-      <b>Last rebuilt:</b> <span class="me-3">{{ page.built_at }}</span>
+      <b>Recording:</b> <span class="me-3">{% if page.audio %}<code>{{ page.audio.path }}</code>{% if page.audio.playback_copy %} <span class="text-muted small">(playing an MP3 copy)</span>{% endif %}{% else %}not found{% endif %}</span>
     </p>
     <p class="small text-muted mb-2">
       Edit <code>{{ page.source_csv }}</code> and save; this page reloads with your changes.

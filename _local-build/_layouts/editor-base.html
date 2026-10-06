@@ -1,0 +1,63 @@
+---
+# Page shell for the editing workspace.
+# Approximates the OHD item page (_layouts/default.html + _layouts/item/item-page-base.html):
+# title banner, dark bar where the navigation sits, breadcrumb strip, item label and
+# title, the centered content column, a footer and the back-to-top button. The banner
+# title and description come from title and description in _config.yml.
+---
+<!doctype html>
+<html lang="en" class="h-100">
+  <head>
+    {% include head/head.html %}
+    {% include editor/editor-style.html %}
+  </head>
+  <body class="d-flex flex-column h-100">
+    <div id="skip-to-content"><a href="#maincontent">Skip to main content</a></div>
+
+    <header class="editor-banner">
+      <div class="container py-3">
+        <div class="editor-site-title">{{ site.title }}</div>
+        <p class="editor-site-description mb-0">{{ site.description }}</p>
+      </div>
+    </header>
+    <div class="editor-nav bg-dark text-light no-print">
+      <div class="container py-2 small">
+        Editing workspace{% if page.source_csv %} &middot; <code class="text-warning">{{ page.source_csv }}</code>{% endif %}
+        <span class="text-white-50">&middot; local preview, not published</span>
+      </div>
+    </div>
+
+    <main id="maincontent" role="main" class="flex-shrink-0">
+      <div class="container py-3">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb bg-light rounded px-3 py-2 mb-3">
+            <li class="breadcrumb-item">Editing workspace</li>
+            <li class="breadcrumb-item active" aria-current="page">{{ page.title }}</li>
+          </ol>
+        </nav>
+        <div class="my-0 h5 small">{{ page.display_template | replace: "_", " " | upcase }}</div>
+        <h2 class="mb-3">{{ page.title }}
+          {% if page.row_count > 0 %}
+          <a href="#transcript-section" class="ms-5 btn btn-sm btn-outline-dark small"> Transcript
+            <svg class="editor-icon" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1"/></svg>
+          </a>{% endif %}
+        </h2>
+        <div class="row justify-content-center">
+          <div class="col-12 col-md-10">
+            {{ content }}
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="bg-dark text-white mt-auto pt-4 pb-3 no-print">
+      <div class="container">
+        <div class="h5 mb-1">{{ site.title }}</div>
+        <p class="small text-white-50 mb-0">{{ site.description }}</p>
+      </div>
+    </footer>
+
+    {% include foot.html %}
+    {% include editor/scroll-to-top.html %}
+  </body>
+</html>

@@ -106,15 +106,8 @@
   });
 
   // ---------------------------------------------------------------------------
-  // Follow playback: highlight (and keep in view) the line being spoken
+  // Highlight the line being spoken
   // ---------------------------------------------------------------------------
-  var follow = document.getElementById('editor-follow');
-  if (follow) {
-    var savedFollow = load('ohd-editor:follow');
-    if (savedFollow !== null) { follow.checked = savedFollow === 'true'; }
-    follow.addEventListener('change', function () { save('ohd-editor:follow', String(follow.checked)); });
-  }
-
   var starts = lines.map(function (line) {
     var btn = line.querySelector('[data-timestamp]');
     return btn ? parseFloat(btn.getAttribute('data-timestamp')) : NaN;
@@ -131,11 +124,6 @@
     }
     return found;
   }
-  function inView(el) {
-    var r = el.getBoundingClientRect();
-    return r.top >= 0 && r.bottom <= window.innerHeight;
-  }
-
   audio.addEventListener('timeupdate', function () {
     var t = audio.currentTime;
     if (Math.abs(t - lastSaved) >= 1) { save(fileKey + ':time', String(t)); lastSaved = t; }
@@ -145,9 +133,6 @@
     current = i;
     if (i < 0) return;
     lines[i].classList.add('editor-current');
-    if (follow && follow.checked && !audio.paused && !inView(lines[i])) {
-      lines[i].scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
   });
 
   // ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 <!-- editor: _includes/editor/player-tools.html
-     Editor-only controls under the OHD player. Hidden in the scrolling mini player
-     (see editor-style.html) and in print. -->
+     Editor-only controls under the OHD player. The skip and speed controls stay
+     available in the scrolling mini player; the rest is hidden there (editor-style.html). -->
 <div id="editor-tools" class="d-flex flex-wrap align-items-center gap-2 small mt-2 no-print">
   <button type="button" class="btn btn-sm btn-outline-secondary" data-skip="-5" title="Back 5 seconds">&minus;5s</button>
   <button type="button" class="btn btn-sm btn-outline-secondary" data-skip="5" title="Forward 5 seconds">+5s</button>
@@ -14,11 +14,7 @@
       <option value="2">2&times;</option>
     </select>
   </label>
-  <div class="form-check form-switch mb-0">
-    <input class="form-check-input" type="checkbox" id="editor-follow" checked>
-    <label class="form-check-label" for="editor-follow">Follow playback</label>
-  </div>
   {%- comment -%} fallback only: editor-js shows this when the page has no OHD Reset Filters button {%- endcomment -%}
   {% if site.data.filters %}<button type="button" id="editor-reset" class="btn btn-sm btn-outline-primary d-none">Reset filters</button>{% endif %}
-  <span class="text-muted ms-md-auto">Space play/pause &middot; &larr;/&rarr; 5s</span>
+  <span class="editor-hint text-muted ms-md-auto">Space play/pause &middot; &larr;/&rarr; 5s</span>
 </div>

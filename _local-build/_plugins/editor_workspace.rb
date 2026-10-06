@@ -2,17 +2,20 @@
 
 # Transcript editing workspace loader
 #
-# On every build (including each rebuild triggered by saving the CSV), this plugin:
-#   1. finds the single transcript CSV in the transcript folder (_data/C/ by default),
-#   2. loads it into site.data.transcripts so the OHD transcript includes render it,
-#   3. finds the recording with the same filename in the audio folder (_data/A/),
-#      optionally makes a seek-friendly playback copy with ffmpeg, and publishes
-#      only that one file at /audio/,
-#   4. checks the CSV for problems worth flagging while copy editing,
-#   5. generates the editing page at the site root (index.html, layout "editor"),
-#   6. prints the workspace address in the terminal while `jekyll serve` runs.
+# Folder layout (paths relative to the toolkit root, set under `editor:` in _config.yml):
+#   A/             original recordings          C/            the ONE transcript being edited
+#   B/             generated transcripts        _local-build/ everything Jekyll needs
 #
-# Settings live under `editor:` in _config.yml.
+# On every build (including each rebuild triggered by saving the CSV), this plugin:
+#   1. finds the single transcript CSV in C/ and loads it into site.data.transcripts,
+#      so the OHD transcript includes render it,
+#   2. finds the recording with the same filename in A/, makes an MP3 playback copy
+#      with ffmpeg when needed, and publishes only that file at /audio/,
+#   3. checks the CSV for problems worth flagging while copy editing,
+#   4. publishes _local-build/assets/ at /assets/ (CSS, icons, libraries),
+#   5. generates the editing page at the site root (index.html, layout "editor").
+# While `jekyll serve` runs, it also serves recordings in short, uncached pieces and
+# prints the workspace address after each build.
 
 require 'csv'
 require 'digest'
@@ -32,44 +35,74 @@ module EditorWorkspace
   # H:MM:SS, HH:MM:SS or MM:SS, optionally with fractional seconds
   TIMESTAMP = /\A(?:(\d+):)?(\d{1,2}):(\d{2})(?:[.,]\d+)?\z/
 
-  # recordings published at /audio/<name>
+  # recordings are published at /audio/<name>
   AUDIO_URL_DIR = 'audio'
 
-  def self.folders(config)
+  # largest piece of a recording sent in one response (see AudioRanges)
+  AUDIO_CHUNK = 2 * 1024 * 1024
+
+  def self.settings(config)
     editor = config['editor'] || {}
     {
-      'transcript' => (editor['transcript_dir'] || '_data/C').to_s.chomp('/'),
-      'audio' => (editor['audio_dir'] || '_data/A').to_s.chomp('/'),
-      'generated' => (editor['generated_dir'] || '_data/B').to_s.chomp('/')
+      'transcript' => (editor['transcript_dir'] || 'C').to_s.chomp('/'),
+      'audio' => (editor['audio_dir'] || 'A').to_s.chomp('/'),
+      'build' => (editor['build_dir'] || '_local-build').to_s.chomp('/')
     }
   end
 
-  # Jekyll parses every CSV under _data on every build, and its data reader
-  # ignores `exclude`. Skip the toolkit folders: _data/B can hold hundreds of
-  # transcripts, and _data/C is read by this plugin, which reports a broken CSV
-  # on the page instead of stopping the build.
-  module SkipToolkitData
-    def read_data_to(dir, data)
-      skip = EditorWorkspace.folders(site.config).values.map { |d| File.expand_path(d, site.source) }
-      return if skip.include?(File.expand_path(dir))
-
-      super
-    end
-  end
-
-  # A recording published at /audio/<name>, whatever folder it is read from
-  class AudioFile < Jekyll::StaticFile
-    def initialize(site, base, dir, name, published_name)
-      super(site, base, dir, name)
-      @published_name = published_name
+  # A file published at a fixed URL, wherever it is read from
+  class MountedFile < Jekyll::StaticFile
+    def initialize(site, source_dir, name, published_path)
+      super(site, source_dir, '', name)
+      @published_path = published_path
     end
 
     def destination(dest)
-      File.join(dest, AUDIO_URL_DIR, @published_name)
+      File.join(dest, @published_path)
     end
 
     def url
-      "/#{AUDIO_URL_DIR}/#{@published_name}"
+      "/#{@published_path}"
+    end
+  end
+
+  # Serves recordings under /audio/ in short, uncached pieces.
+  # WEBrick (the server behind `jekyll serve`) answers an open-ended request such as
+  # "bytes=1000000-" with the whole rest of the file and holds the connection open while
+  # the browser reads it, and lets the browser cache and revalidate pieces of the file.
+  # With long recordings that can leave a browser waiting on stale connections or cache
+  # entries after a seek or a reload. Short pieces, Accept-Ranges and no-store avoid both.
+  module AudioRanges
+    def do_GET(req, res)
+      path = @local_path.to_s
+      ext = File.extname(path).delete('.').downcase
+      return super unless AUDIO_TYPES.key?(ext) && path.include?("/#{AUDIO_URL_DIR}/")
+
+      size = File.size(path)
+      res['content-type'] = AUDIO_TYPES[ext]
+      res['accept-ranges'] = 'bytes'
+      res['cache-control'] = 'no-store'
+
+      range = req['range'].to_s
+      if (m = /\Abytes=(\d*)-(\d*)\z/.match(range.strip))
+        if m[1].empty? # suffix range, e.g. bytes=-500
+          first = [size - m[2].to_i, 0].max
+          last = size - 1
+        else
+          first = m[1].to_i
+          last = m[2].empty? ? size - 1 : [m[2].to_i, size - 1].min
+        end
+        raise WEBrick::HTTPStatus::RequestRangeNotSatisfiable if first >= size || last < first
+
+        last = [last, first + AUDIO_CHUNK - 1].min
+        res['content-range'] = "bytes #{first}-#{last}/#{size}"
+        res['content-length'] = (last - first + 1).to_s
+        res.body = File.open(path, 'rb')
+        raise WEBrick::HTTPStatus::PartialContent
+      end
+
+      res['content-length'] = size.to_s
+      res.body = File.open(path, 'rb')
     end
   end
 
@@ -79,26 +112,24 @@ module EditorWorkspace
 
     def generate(site)
       config = site.config['editor'] || {}
-      dirs = EditorWorkspace.folders(site.config)
+      dirs = EditorWorkspace.settings(site.config)
       preference = Array(config['audio_preference'] || AUDIO_TYPES.keys).map { |e| e.to_s.downcase }
       copy_mode = (config['playback_copy'] || 'auto').to_s.downcase
 
       @notices = []
       site.pages.reject! { |p| p.url == '/' }
+      # C/ stays included so Jekyll watches it for saves, but nothing in it is published
+      prefix = "#{dirs['transcript']}/"
+      site.static_files.reject! { |f| f.relative_path.sub(%r{\A/}, '').start_with?(prefix) }
+
+      mount_assets(site, dirs['build'])
 
       data = {
         'layout' => 'editor',
         'title' => 'Editing workspace',
         # same value an OHD metadata row gives a transcript item
-        'display_template' => 'transcript',
-        'built_at' => Time.now.strftime('%-I:%M:%S %p'),
-        'has_scroll_to_top' => File.exist?(File.join(site.source, site.config['includes_dir'] || '_includes', 'scroll-to-top.html'))
+        'display_template' => 'transcript'
       }
-
-      unless File.exist?(File.join(site.source, 'assets', 'lib', 'cb-icons.svg'))
-        @notices << 'assets/lib/cb-icons.svg is missing, so the back-to-top button and other icons are blank. ' \
-                    'Copy it from the OHD project.'
-      end
 
       csv_path = pick_transcript(site, dirs['transcript'])
       if csv_path
@@ -134,6 +165,25 @@ module EditorWorkspace
     end
 
     private
+
+    # Publish everything in _local-build/assets/ at /assets/: files with front matter
+    # (such as css/cb.scss) are rendered as pages, everything else is copied as-is.
+    def mount_assets(site, build_dir)
+      base = File.join(site.source, build_dir)
+      root = File.join(base, 'assets')
+      return unless Dir.exist?(root)
+
+      Dir.glob('**/*', File::FNM_DOTMATCH, base: root).sort.each do |rel|
+        full = File.join(root, rel)
+        next if File.directory?(full) || File.basename(rel).start_with?('.')
+
+        if Jekyll::Utils.has_yaml_header?(full)
+          site.pages << Jekyll::Page.new(site, base, File.join('assets', File.dirname(rel)).chomp('/.'), File.basename(rel))
+        else
+          site.static_files << MountedFile.new(site, File.dirname(full), File.basename(rel), File.join('assets', rel))
+        end
+      end
+    end
 
     def pick_transcript(site, dir)
       full = File.join(site.source, dir)
@@ -256,13 +306,12 @@ module EditorWorkspace
       copy = playback_copy(site, source, basename, ext, copy_mode)
 
       if copy
-        copy_ext = File.extname(copy).delete('.')
-        published = "#{basename}.#{copy_ext}"
-        site.static_files << AudioFile.new(site, File.dirname(copy), '', File.basename(copy), published)
-        type = AUDIO_TYPES[copy_ext]
+        published = "#{basename}.mp3"
+        site.static_files << MountedFile.new(site, File.dirname(copy), File.basename(copy), "#{AUDIO_URL_DIR}/#{published}")
+        type = AUDIO_TYPES['mp3']
       else
-        site.static_files << AudioFile.new(site, full, '', chosen, chosen)
         published = chosen
+        site.static_files << MountedFile.new(site, full, chosen, "#{AUDIO_URL_DIR}/#{published}")
         type = AUDIO_TYPES[ext]
       end
 
@@ -275,12 +324,8 @@ module EditorWorkspace
       }
     end
 
-    # Playback copy: constant-bitrate MP3, which decodes in every browser and seeks accurately.
-    ENCODINGS = [
-      ['mp3', %w[-c:a libmp3lame -b:a 128k]]
-    ].freeze
-
-    # Returns the path of a cached playback copy of the recording, or nil to play the original.
+    # Returns the path of a cached constant-bitrate MP3 copy of the recording,
+    # or nil to play the original.
     def playback_copy(site, source, basename, ext, mode)
       return nil if mode == 'never'
       # the OHD player is an MP3 player, so by default every other format gets an MP3 copy
@@ -296,24 +341,21 @@ module EditorWorkspace
       stat = File.stat(source)
       key = Digest::SHA1.hexdigest("#{source}|#{stat.size}|#{stat.mtime.to_i}")[0, 12]
       cache_dir = File.join(site.source, '.jekyll-cache', 'editor-audio')
-      prefix = File.join(cache_dir, "#{basename}-#{key}")
-      cached = ENCODINGS.map { |e, _| "#{prefix}.#{e}" }.find { |f| File.exist?(f) }
-      return cached if cached
+      out = File.join(cache_dir, "#{basename}-#{key}.mp3")
+      return out if File.exist?(out)
 
       FileUtils.mkdir_p(cache_dir)
       Dir.glob(File.join(cache_dir, "#{basename}-*")).each { |old| File.delete(old) }
       Jekyll.logger.info 'Editor:', "Making a playback copy of #{File.basename(source)} (first time only)..."
-      ENCODINGS.each do |copy_ext, args|
-        out = "#{prefix}.#{copy_ext}"
-        tmp = "#{prefix}.part.#{copy_ext}"
-        ok = system(ffmpeg, '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
-                    '-i', source, '-vn', *args, tmp, err: File::NULL)
-        if ok && File.size?(tmp)
-          File.rename(tmp, out)
-          return out
-        end
-        FileUtils.rm_f(tmp)
+      tmp = File.join(cache_dir, "#{basename}-#{key}.part.mp3")
+      ok = system(ffmpeg, '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
+                  '-i', source, '-vn', '-c:a', 'libmp3lame', '-b:a', '128k', tmp, err: File::NULL)
+      if ok && File.size?(tmp)
+        File.rename(tmp, out)
+        return out
       end
+
+      FileUtils.rm_f(tmp)
       @notices << "ffmpeg couldn't make a playback copy of #{File.basename(source)}, so it is played as-is."
       nil
     end
@@ -331,15 +373,21 @@ module EditorWorkspace
   end
 end
 
-Jekyll::DataReader.prepend(EditorWorkspace::SkipToolkitData)
+begin
+  require 'webrick'
+  WEBrick::HTTPServlet::DefaultFileHandler.prepend(EditorWorkspace::AudioRanges)
+rescue LoadError
+  # webrick is only needed for `jekyll serve`
+end
 
 # While `jekyll serve` runs, print the workspace address after each build so it can be
 # copied (or Cmd/Ctrl+clicked in most terminals) without the browser opening by itself.
+# 127.0.0.1 is the address Jekyll listens on; "localhost" can resolve elsewhere first.
 Jekyll::Hooks.register :site, :post_write do |site|
   next unless site.config['serving']
 
   host = site.config['host'].to_s
-  host = 'localhost' if host.empty? || host == '127.0.0.1'
+  host = '127.0.0.1' if host.empty? || host == 'localhost'
   scheme = site.config['ssl_cert'] && site.config['ssl_key'] ? 'https' : 'http'
   Jekyll.logger.info 'Workspace:', "#{scheme}://#{host}:#{site.config['port']}#{site.config['baseurl']}/"
 end
