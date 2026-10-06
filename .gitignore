@@ -182,9 +182,9 @@ cython_debug/
 .abstra/
 
 # Visual Studio Code
-#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
+#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore
 #  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#  and can be added to the global gitignore or merged into this file. However, if you prefer, 
+#  and can be added to the global gitignore or merged into this file. However, if you prefer,
 #  you could uncomment the following to ignore the entire vscode folder
 # .vscode/
 
@@ -208,6 +208,15 @@ __marimo__/
 
 .DS_Store
 
+# Jekyll editing workspace (local build output, never committed)
+#   _site/          the built workspace, including the published recording copy
+#   .jekyll-cache/  Jekyll's cache, including the MP3 playback copies
+_site/
+.jekyll-cache/
+.jekyll-metadata
+.sass-cache/
+
+# Toolkit working folders (no leading slash, so these also match _data/A/, _data/B/, _data/C/)
 A/
 B/
 C/

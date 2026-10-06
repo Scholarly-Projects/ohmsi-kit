@@ -6,80 +6,173 @@
 
   function save(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
   function load(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+  function clock(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    var h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
+    return h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  }
 
-  // timestamp buttons call this (see editor/transcript-lines.html)
+  // ---------------------------------------------------------------------------
+  // CSV line numbers and flags, added under OHD's own transcript markup
+  // ---------------------------------------------------------------------------
+  var rows = { lines: [], flags: [] };
+  try { rows = JSON.parse(document.getElementById('editor-rows').textContent); } catch (e) {}
+  var lines = Array.prototype.slice.call(document.querySelectorAll('#contents-container .line'));
+  var csvName = {{ page.source_csv | default: "" | jsonify }};
+  lines.forEach(function (line, i) {
+    var n = rows.lines[i];
+    var stampCol = line.querySelector('.timestamp');
+    if (n && stampCol) {
+      var tag = document.createElement('div');
+      tag.className = 'csv-line';
+      tag.title = 'Line ' + n + ' in ' + csvName;
+      tag.textContent = 'L' + n;
+      stampCol.appendChild(tag);
+    }
+    var flag = rows.flags[i];
+    if (flag) {
+      line.classList.add('editor-flagged');
+      var words = line.querySelector('.words');
+      if (words) {
+        var badge = document.createElement('span');
+        badge.className = 'badge text-bg-warning editor-flag ms-2';
+        badge.textContent = flag;
+        words.appendChild(badge);
+      }
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  // Reset filters (calls the OHD transcript-js functions)
+  // ---------------------------------------------------------------------------
+  var reset = document.getElementById('editor-reset');
+  if (reset) {
+    reset.addEventListener('click', function () {
+      if (typeof vizFilter === 'function') { vizFilter('all'); }
+      else if (typeof resetVals === 'function') { resetVals(); }
+    });
+  }
+
+  // OHD's "mp3" timestamp buttons call timestampMP3(seconds)
   window.seekLocal = function (sec) {
     if (!audio) return;
+    sec = parseFloat(sec);
+    if (isNaN(sec)) return;
     audio.currentTime = sec;
-    audio.play();
+    var p = audio.play();
+    if (p && p.catch) { p.catch(function (err) { log('play() refused: ' + err.name); }); }
   };
+  window.timestampMP3 = window.seekLocal;
 
   if (!audio) return;
 
-  // --- pick up where playback was before the last save reloaded the page
+  // ---------------------------------------------------------------------------
+  // Playback log (kept across reloads for this browser tab)
+  // ---------------------------------------------------------------------------
+  var logBox = document.getElementById('editor-log');
+  var logKey = fileKey + ':log';
+  var entries = [];
+  try { entries = JSON.parse(sessionStorage.getItem(logKey)) || []; } catch (e) {}
+  function render() { if (logBox) logBox.textContent = entries.join('\n'); }
+  function log(msg) {
+    var now = new Date();
+    entries.push(now.toLocaleTimeString() + '  [' + clock(audio.currentTime) + ']  ' + msg);
+    entries = entries.slice(-60);
+    try { sessionStorage.setItem(logKey, JSON.stringify(entries)); } catch (e) {}
+    render();
+  }
+  render();
+  var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+  log('page ' + (nav && nav.type === 'reload' ? 'reloaded (rebuild or refresh)' : 'loaded') +
+      ' · ' + {{ page.audio.url | jsonify }} + ' (' + {{ page.audio.type | jsonify }} + ')');
+
+  ['play', 'pause', 'seeking', 'seeked', 'waiting', 'stalled', 'ended', 'emptied', 'abort'].forEach(function (ev) {
+    audio.addEventListener(ev, function () { log(ev); });
+  });
+  audio.addEventListener('loadedmetadata', function () {
+    log('loadedmetadata · duration ' + clock(audio.duration) +
+        ' · seekable ' + (audio.seekable.length ? clock(audio.seekable.end(0)) : 'none'));
+  });
+  audio.addEventListener('error', function () {
+    var err = audio.error || (audio.querySelector('source') && 'source failed');
+    log('ERROR ' + (err && err.code ? 'code ' + err.code + ' ' + (err.message || '') : err));
+    var box = document.getElementById('editor-log-box');
+    if (box) box.open = true;
+  }, true);
+
+  // ---------------------------------------------------------------------------
+  // Pick up where playback was before a save reloaded the page
+  // ---------------------------------------------------------------------------
   var savedTime = parseFloat(load(fileKey + ':time'));
-  function restoreTime() {
+  var resume = sessionStorage.getItem(fileKey + ':playing') === 'true';
+  try { sessionStorage.removeItem(fileKey + ':playing'); } catch (e) {}
+  function restore() {
     if (!isNaN(savedTime) && savedTime > 0 && (!audio.duration || savedTime < audio.duration)) {
       audio.currentTime = savedTime;
     }
+    if (resume) {
+      var p = audio.play();
+      if (p && p.catch) { p.catch(function () { log('resume after reload blocked by the browser; press play'); }); }
+    }
   }
-  if (audio.readyState >= 1) { restoreTime(); }
-  else { audio.addEventListener('loadedmetadata', restoreTime, { once: true }); }
+  if (audio.readyState >= 1) { restore(); }
+  else { audio.addEventListener('loadedmetadata', restore, { once: true }); }
+  window.addEventListener('pagehide', function () {
+    save(fileKey + ':time', String(audio.currentTime));
+    try { sessionStorage.setItem(fileKey + ':playing', String(!audio.paused)); } catch (e) {}
+  });
 
-  // --- playback speed
+  // ---------------------------------------------------------------------------
+  // Speed and skip buttons
+  // ---------------------------------------------------------------------------
   var rate = document.getElementById('editor-rate');
   var savedRate = load('ohd-editor:rate');
-  if (savedRate) { rate.value = savedRate; audio.playbackRate = parseFloat(savedRate) || 1; }
+  if (savedRate) { rate.value = savedRate; }
+  audio.playbackRate = parseFloat(rate.value) || 1;
   rate.addEventListener('change', function () {
     audio.playbackRate = parseFloat(rate.value) || 1;
     save('ohd-editor:rate', rate.value);
   });
-  // some browsers reset the rate when a new source loads
-  audio.addEventListener('play', function () { audio.playbackRate = parseFloat(rate.value) || 1; });
+  audio.addEventListener('loadedmetadata', function () { audio.playbackRate = parseFloat(rate.value) || 1; });
 
-  // --- skip buttons
   document.querySelectorAll('[data-skip]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       audio.currentTime = Math.max(0, audio.currentTime + parseFloat(btn.getAttribute('data-skip')));
     });
   });
 
-  // --- follow playback: highlight the line being spoken
+  // ---------------------------------------------------------------------------
+  // Follow playback: highlight (and keep in view) the line being spoken
+  // ---------------------------------------------------------------------------
   var follow = document.getElementById('editor-follow');
   var savedFollow = load('ohd-editor:follow');
   if (savedFollow !== null) { follow.checked = savedFollow === 'true'; }
   follow.addEventListener('change', function () { save('ohd-editor:follow', String(follow.checked)); });
 
-  var lines = Array.prototype.slice.call(document.querySelectorAll('#contents-container .line'));
   var starts = lines.map(function (line) {
     var btn = line.querySelector('[data-timestamp]');
     return btn ? parseFloat(btn.getAttribute('data-timestamp')) : NaN;
   });
-  var player = document.getElementById('editor-player');
   var current = -1;
   var lastSaved = 0;
 
   // the line with the latest start time that has already passed
   // (robust to an out-of-order timestamp elsewhere in the file)
   function lineAt(t) {
-    var found = -1;
-    var best = -Infinity;
+    var found = -1, best = -Infinity;
     for (var i = 0; i < starts.length; i++) {
       if (!isNaN(starts[i]) && starts[i] <= t + 0.25 && starts[i] >= best) { best = starts[i]; found = i; }
     }
     return found;
   }
-
   function inView(el) {
     var r = el.getBoundingClientRect();
-    var top = player ? player.getBoundingClientRect().bottom : 0;
-    return r.top >= top && r.bottom <= window.innerHeight;
+    return r.top >= 0 && r.bottom <= window.innerHeight;
   }
 
   audio.addEventListener('timeupdate', function () {
     var t = audio.currentTime;
     if (Math.abs(t - lastSaved) >= 1) { save(fileKey + ':time', String(t)); lastSaved = t; }
-
     var i = lineAt(t);
     if (i === current) return;
     if (current >= 0 && lines[current]) lines[current].classList.remove('editor-current');
@@ -91,7 +184,9 @@
     }
   });
 
-  // --- keyboard: Space play/pause, left/right arrows 5 seconds
+  // ---------------------------------------------------------------------------
+  // Keyboard: Space play/pause, left/right arrows 5 seconds
+  // ---------------------------------------------------------------------------
   document.addEventListener('keydown', function (e) {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     var el = document.activeElement;

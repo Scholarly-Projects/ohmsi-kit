@@ -3,17 +3,21 @@
 # Transcript editing workspace loader
 #
 # On every build (including each rebuild triggered by saving the CSV), this plugin:
-#   1. finds the single transcript CSV in the transcript folder (C/ by default),
-#   2. loads it into site.data.transcripts so the OHD transcript includes can render it,
-#   3. finds the recording with the same filename in the audio folder (A/ by default)
-#      and copies only that file into _site,
+#   1. finds the single transcript CSV in the transcript folder (_data/C/ by default),
+#   2. loads it into site.data.transcripts so the OHD transcript includes render it,
+#   3. finds the recording with the same filename in the audio folder (_data/A/),
+#      optionally makes a seek-friendly playback copy with ffmpeg, and publishes
+#      only that one file at /audio/,
 #   4. checks the CSV for problems worth flagging while copy editing,
-#   5. generates the editing page at the site root (index.html, layout "editor").
+#   5. generates the editing page at the site root (index.html, layout "editor"),
+#   6. prints the workspace address in the terminal while `jekyll serve` runs.
 #
 # Settings live under `editor:` in _config.yml.
 
 require 'csv'
+require 'digest'
 require 'erb'
+require 'fileutils'
 
 module EditorWorkspace
   AUDIO_TYPES = {
@@ -28,33 +32,68 @@ module EditorWorkspace
   # H:MM:SS, HH:MM:SS or MM:SS, optionally with fractional seconds
   TIMESTAMP = /\A(?:(\d+):)?(\d{1,2}):(\d{2})(?:[.,]\d+)?\z/
 
+  # recordings published at /audio/<name>
+  AUDIO_URL_DIR = 'audio'
+
+  def self.folders(config)
+    editor = config['editor'] || {}
+    {
+      'transcript' => (editor['transcript_dir'] || '_data/C').to_s.chomp('/'),
+      'audio' => (editor['audio_dir'] || '_data/A').to_s.chomp('/'),
+      'generated' => (editor['generated_dir'] || '_data/B').to_s.chomp('/')
+    }
+  end
+
+  # Jekyll parses every CSV under _data on every build, and its data reader
+  # ignores `exclude`. Skip the toolkit folders: _data/B can hold hundreds of
+  # transcripts, and _data/C is read by this plugin, which reports a broken CSV
+  # on the page instead of stopping the build.
+  module SkipToolkitData
+    def read_data_to(dir, data)
+      skip = EditorWorkspace.folders(site.config).values.map { |d| File.expand_path(d, site.source) }
+      return if skip.include?(File.expand_path(dir))
+
+      super
+    end
+  end
+
+  # A recording published at /audio/<name>, whatever folder it is read from
+  class AudioFile < Jekyll::StaticFile
+    def initialize(site, base, dir, name, published_name)
+      super(site, base, dir, name)
+      @published_name = published_name
+    end
+
+    def destination(dest)
+      File.join(dest, AUDIO_URL_DIR, @published_name)
+    end
+
+    def url
+      "/#{AUDIO_URL_DIR}/#{@published_name}"
+    end
+  end
+
   class Generator < Jekyll::Generator
     safe true
     priority :highest
 
     def generate(site)
       config = site.config['editor'] || {}
-      transcript_dir = (config['transcript_dir'] || 'C').to_s.chomp('/')
-      audio_dir = (config['audio_dir'] || 'A').to_s.chomp('/')
+      dirs = EditorWorkspace.folders(site.config)
       preference = Array(config['audio_preference'] || AUDIO_TYPES.keys).map { |e| e.to_s.downcase }
+      copy_mode = (config['playback_copy'] || 'auto').to_s.downcase
 
       @notices = []
-
-      # The transcript folder must stay included so Jekyll watches it for saves,
-      # but nothing in it needs to be copied to _site.
-      prefix = "#{transcript_dir}/"
-      site.static_files.reject! { |f| f.relative_path.sub(%r{\A/}, '').start_with?(prefix) }
-      site.pages.reject! { |p| p.relative_path.sub(%r{\A/}, '').start_with?(prefix) || p.url == '/' }
+      site.pages.reject! { |p| p.url == '/' }
 
       data = {
         'layout' => 'editor',
         'title' => 'Editing workspace',
         'built_at' => Time.now.strftime('%-I:%M:%S %p'),
-        'transcript_dir' => transcript_dir,
-        'audio_dir' => audio_dir
+        'has_scroll_to_top' => File.exist?(File.join(site.source, site.config['includes_dir'] || '_includes', 'scroll-to-top.html'))
       }
 
-      csv_path = pick_transcript(site, transcript_dir)
+      csv_path = pick_transcript(site, dirs['transcript'])
       if csv_path
         filename = File.basename(csv_path)
         basename = File.basename(csv_path, File.extname(csv_path))
@@ -69,11 +108,10 @@ module EditorWorkspace
           'title' => basename,
           'objectid' => key,
           'object-transcript' => key,
-          'source_csv' => "#{transcript_dir}/#{filename}",
+          'source_csv' => "#{dirs['transcript']}/#{filename}",
           'row_count' => (rows || []).size,
           'columns' => columns || [],
-          'has_tags' => (columns || []).include?('tags'),
-          'audio' => find_audio(site, audio_dir, basename, preference)
+          'audio' => find_audio(site, dirs['audio'], basename, preference, copy_mode)
         )
       end
 
@@ -91,7 +129,7 @@ module EditorWorkspace
     def pick_transcript(site, dir)
       full = File.join(site.source, dir)
       unless Dir.exist?(full)
-        @notices << "There is no #{dir}/ folder. Create it and drop one transcript CSV from B/ into it."
+        @notices << "There is no #{dir}/ folder. Create it and copy one transcript CSV into it."
         return nil
       end
 
@@ -102,7 +140,7 @@ module EditorWorkspace
 
       case csvs.size
       when 0
-        @notices << "#{dir}/ is empty. Copy one transcript CSV from B/ into #{dir}/ and save; the page reloads by itself."
+        @notices << "#{dir}/ is empty. Copy one transcript CSV into #{dir}/; the page reloads by itself."
         nil
       when 1
         csvs.first
@@ -182,7 +220,7 @@ module EditorWorkspace
       @notices << "#{untimed} line(s) have no timestamp, so they can't be jumped to." if untimed.positive?
     end
 
-    def find_audio(site, audio_dir, basename, preference)
+    def find_audio(site, audio_dir, basename, preference, copy_mode)
       full = File.join(site.source, audio_dir)
       candidates = if Dir.exist?(full)
                      Dir.children(full).select do |f|
@@ -204,14 +242,96 @@ module EditorWorkspace
         @notices << "#{audio_dir}/ has #{candidates.size} recordings named #{basename}; playing #{chosen}."
       end
 
-      # A/ is excluded from the build; copy just this one recording into _site.
-      site.static_files << Jekyll::StaticFile.new(site, site.source, audio_dir, chosen)
       ext = File.extname(chosen).delete('.').downcase
+      source = File.join(full, chosen)
+      copy = playback_copy(site, source, basename, ext, copy_mode)
+
+      if copy
+        copy_ext = File.extname(copy).delete('.')
+        published = "#{basename}.#{copy_ext}"
+        site.static_files << AudioFile.new(site, File.dirname(copy), '', File.basename(copy), published)
+        type = AUDIO_TYPES[copy_ext]
+      else
+        site.static_files << AudioFile.new(site, full, '', chosen, chosen)
+        published = chosen
+        type = AUDIO_TYPES[ext]
+      end
+
       {
         'name' => chosen,
-        'url' => "/#{audio_dir}/#{ERB::Util.url_encode(chosen)}",
-        'type' => AUDIO_TYPES[ext]
+        'path' => "#{audio_dir}/#{chosen}",
+        'url' => "/#{AUDIO_URL_DIR}/#{ERB::Util.url_encode(published)}",
+        'type' => type,
+        'playback_copy' => !copy.nil?
       }
     end
+
+    # Playback copy formats, in order of preference. Constant-bitrate MP3 decodes in
+    # every browser and seeks accurately; AAC is the fallback if ffmpeg has no MP3 encoder.
+    ENCODINGS = [
+      ['mp3', %w[-c:a libmp3lame -b:a 128k]],
+      ['m4a', %w[-c:a aac -b:a 128k -movflags +faststart]]
+    ].freeze
+
+    # Returns the path of a cached playback copy of the recording, or nil to play the original.
+    def playback_copy(site, source, basename, ext, mode)
+      return nil if mode == 'never'
+      return nil if mode == 'auto' && !%w[wav flac].include?(ext)
+
+      ffmpeg = which('ffmpeg')
+      unless ffmpeg
+        @notices << "ffmpeg was not found, so #{File.basename(source)} is played as-is. " \
+                    'Install ffmpeg, or set editor: playback_copy: never in _config.yml to hide this message.'
+        return nil
+      end
+
+      stat = File.stat(source)
+      key = Digest::SHA1.hexdigest("#{source}|#{stat.size}|#{stat.mtime.to_i}")[0, 12]
+      cache_dir = File.join(site.source, '.jekyll-cache', 'editor-audio')
+      prefix = File.join(cache_dir, "#{basename}-#{key}")
+      cached = ENCODINGS.map { |e, _| "#{prefix}.#{e}" }.find { |f| File.exist?(f) }
+      return cached if cached
+
+      FileUtils.mkdir_p(cache_dir)
+      Dir.glob(File.join(cache_dir, "#{basename}-*")).each { |old| File.delete(old) }
+      Jekyll.logger.info 'Editor:', "Making a playback copy of #{File.basename(source)} (first time only)..."
+      ENCODINGS.each do |copy_ext, args|
+        out = "#{prefix}.#{copy_ext}"
+        tmp = "#{prefix}.part.#{copy_ext}"
+        ok = system(ffmpeg, '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
+                    '-i', source, '-vn', *args, tmp, err: File::NULL)
+        if ok && File.size?(tmp)
+          File.rename(tmp, out)
+          return out
+        end
+        FileUtils.rm_f(tmp)
+      end
+      @notices << "ffmpeg couldn't make a playback copy of #{File.basename(source)}, so it is played as-is."
+      nil
+    end
+
+    def which(cmd)
+      exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(';') : ['']
+      ENV['PATH'].to_s.split(File::PATH_SEPARATOR).each do |dir|
+        exts.each do |ext|
+          exe = File.join(dir, "#{cmd}#{ext}")
+          return exe if File.executable?(exe) && !File.directory?(exe)
+        end
+      end
+      nil
+    end
   end
+end
+
+Jekyll::DataReader.prepend(EditorWorkspace::SkipToolkitData)
+
+# While `jekyll serve` runs, print the workspace address after each build so it can be
+# copied (or Cmd/Ctrl+clicked in most terminals) without the browser opening by itself.
+Jekyll::Hooks.register :site, :post_write do |site|
+  next unless site.config['serving']
+
+  host = site.config['host'].to_s
+  host = 'localhost' if host.empty? || host == '127.0.0.1'
+  scheme = site.config['ssl_cert'] && site.config['ssl_key'] ? 'https' : 'http'
+  Jekyll.logger.info 'Workspace:', "#{scheme}://#{host}:#{site.config['port']}#{site.config['baseurl']}/"
 end

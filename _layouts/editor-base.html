@@ -1,7 +1,7 @@
 ---
-# Minimal page shell for the editing workspace.
-# Uses the OHD head and foot includes so Bootstrap, fonts, theme CSS and
-# custom-foot scripts load exactly as they do on an OHD item page.
+# Page shell for the editing workspace, following the CollectionBuilder item page:
+# OHD head and foot includes (Bootstrap, fonts, theme CSS, custom-foot scripts),
+# an item title, and the scroll-to-top button the OHD transcript scripts expect.
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -10,16 +10,28 @@
 {% include editor/editor-style.html %}
 </head>
 <body>
-<a class="visually-hidden-focusable" href="#editor-main">Skip to transcript</a>
-<header class="editor-header border-bottom">
-  <div class="container-xxl py-2 d-flex flex-wrap align-items-baseline gap-2">
-    <span class="fw-bold">Transcript editing workspace</span>
-    {% if page.source_csv %}<span class="text-muted small">editing <code>{{ page.source_csv }}</code></span>{% endif %}
+<a href="#mainContent" class="visually-hidden-focusable">Skip to main content</a>
+<div class="editor-banner no-print">
+  <div class="container py-1 small">
+    <b>Editing workspace</b>{% if page.source_csv %} &middot; <code>{{ page.source_csv }}</code>{% endif %}
+    <span class="text-muted">&middot; local preview, not published</span>
   </div>
-</header>
-<main id="editor-main" class="container-xxl pb-5">
-{{ content }}
+</div>
+<main id="mainContent">
+  <div class="container py-3">
+    <div class="row">
+      <div class="col-md-12">
+        <h1 class="mb-3 item-title">{{ page.title }}</h1>
+      </div>
+    </div>
+    {{ content }}
+  </div>
 </main>
+{%- comment -%} transcript-js.html attaches to #scroll-to-top and stops (skipping its
+tooltip and filter setup) if it is missing {%- endcomment -%}
+{% if page.has_scroll_to_top %}{% include scroll-to-top.html %}{% else %}
+<button type="button" id="scroll-to-top" class="btn btn-primary btn-sm position-fixed bottom-0 end-0 m-3 no-print" title="Back to top" aria-label="Back to top" onclick="window.scrollTo({ top: 0, behavior: 'smooth' });">&uarr;</button>
+{% endif %}
 {% include foot.html %}
 </body>
 </html>

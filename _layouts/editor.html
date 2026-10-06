@@ -1,17 +1,20 @@
 ---
 # Editing workspace item page.
-# Adapted from the OHD _layouts/transcript.html: same transcript data and topic
-# visualization, with a local audio player in place of the YouTube/Vimeo/
-# SoundCloud/archive.org embeds, and no metadata, compound-object or print parts.
+# Mirrors the OHD _layouts/transcript.html structure and uses the OHD transcript,
+# visualization, filter, scrollama and transcript-js includes unmodified, so the
+# transcript looks and behaves as it will on the live site. The only differences:
+#   - the AV area holds the local recording plus editor controls (editor/av-local.html)
+#   - the metadata area shows workspace status (editor/status-panel.html), since a
+#     transcript in _data/C/ has no collection metadata row yet
+#   - editor/editor-js.html adds CSV line numbers, flags and playback follow
 layout: editor-base
-custom-foot: transcript/js/transcript-js.html;editor/editor-js.html
+custom-foot: transcript/js/transcript-js.html;transcript/js/scrollama-js.html;editor/editor-js.html
 ---
-{%- comment -%} rows loaded from the CSV in C/ by _plugins/editor_workspace.rb {%- endcomment -%}
-{%- assign items = site.data.transcripts[page.objectid] -%}
-{%- if page.audio -%}{%- assign av = "local" -%}{%- endif -%}
+{%- comment -%} rows loaded from the CSV in _data/C/ by _plugins/editor_workspace.rb {%- endcomment -%}
+{% assign items = site.data.transcripts[page.objectid] %}
 
-{%- comment -%} if using color-coded visualization find all words used in the tags column {%- endcomment -%}
-{% if site.data.filters and page.has_tags %}
+{%- comment -%} if using color-coded visualization find all words used in the subject metadata {%- endcomment -%}
+{% if site.data.filters %}
 {% include transcript/style/filter-style.html %}
 {%- assign min-count = 1 -%}
 {%- assign raw-subjects = items | map: "tags" | compact | join: ";" | split: ";" -%}
@@ -22,22 +25,30 @@ endcapture -%}
 {%- assign uniqueSubjects = subjects | uniq | sort -%}
 {% endif %}
 
-{% include editor/audio-player.html %}
-{% include editor/status-panel.html %}
+{%- comment -%} OHD renders "mp3" timestamps as timestampMP3() buttons; the editor player
+answers them for every local format (mp3, m4a, wav, flac) {%- endcomment -%}
+{% if page.audio %}{% assign av = "mp3" %}{% endif %}
 
-{% if items.size > 0 %}
 <div id="scrolly">
   <article>
-    <div class="step my-3" id="step0">
+    <div class="step my-3 {% unless site.data.theme.media-scroll == false %}
+    pb-5{% endunless %}" id="step0" >
       <div id="upper-content">
+        {% if site.data.theme.media-scroll == true %}
+        {% include transcript/style/media-scroll-wrapper.html %}
+        {% endif %}
+        {% include editor/av-local.html %}
+        <div id="transcript-metadata" class="no-print">
+          {% include editor/status-panel.html %}
+        </div>
         {% if site.data.filters and uniqueSubjects.size > 0 %}
         {% include transcript/item/transcript-viz.html %}
         {% endif %}
-      </div>
-    </div>
-    <div class="step my-3" id="step1">
-      {% include editor/transcript-lines.html %}
-    </div>
+  </div>
+  </div>
+<div class="step my-3" id="step1" >
+{% include transcript/item/transcript.html %}
+</div>
   </article>
 </div>
-{% endif %}
+<script id="editor-rows" type="application/json">{"lines": {{ items | map: "csv_line" | jsonify }}, "flags": {{ items | map: "editor_flags" | jsonify }}}</script>
