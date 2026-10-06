@@ -9,7 +9,7 @@
     </p>
     <p class="small text-muted mb-2">
       Edit <code>{{ page.source_csv }}</code> and save; this page reloads with your changes.
-      The grey <span class="csv-line">L</span> numbers under each timestamp are line numbers in the CSV.
+      The grey <span class="csv-line">L</span> number under each timestamp is that line of the CSV{% unless site.editor.open_in == "none" %}; select it to open the CSV at that line in your editor{% endunless %}.
     </p>
     {% endif %}
 

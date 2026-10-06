@@ -1,30 +1,126 @@
 <!-- editor: _includes/editor/editor-js.html
      Editor-only behavior layered on the OHD page. Timestamp buttons use OHD's own
-     timestampMP3() from transcript/player/mp3.html. -->
+     timestampMP3() from transcript/player/mp3.html. Shortcuts, skip length, speeds and the
+     line-number editor come from `editor:` in _config.yml. -->
 <script>
 (function () {
   var audio = document.getElementById('audio-player');
   var fileKey = 'ohd-editor:' + {{ page.source_csv | default: "none" | jsonify }};
+  var settings = {{ site.editor | jsonify }} || {};
 
   function save(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
   function load(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ---------------------------------------------------------------------------
-  // CSV line numbers and flags, added under OHD's own transcript markup
+  // Settings from _config.yml, with defaults
+  // ---------------------------------------------------------------------------
+  var DEFAULT_KEYS = {
+    play_pause: 'Space', back: 'ArrowLeft', forward: 'ArrowRight',
+    faster: 'i', slower: 'd', normal_speed: '0', next_line: 'n', previous_line: 'p'
+  };
+  // each action -> list of KeyboardEvent.key values (lower case); [] turns it off
+  function keyList(value) {
+    if (value === null || value === false) return [];
+    var list = Array.isArray(value) ? value : [value];
+    return list.map(function (k) {
+      k = String(k);
+      if (k === ' ' || /^space(bar)?$/i.test(k)) return ' ';
+      return k.toLowerCase();
+    }).filter(function (k) { return k !== ''; });
+  }
+  var KEYS = {};
+  Object.keys(DEFAULT_KEYS).forEach(function (action) {
+    var configured = settings.keys && Object.prototype.hasOwnProperty.call(settings.keys, action);
+    KEYS[action] = keyList(configured ? settings.keys[action] : DEFAULT_KEYS[action]);
+  });
+  var SKIP = parseFloat(settings.skip_seconds) > 0 ? parseFloat(settings.skip_seconds) : 5;
+  var SPEEDS = (Array.isArray(settings.speeds) ? settings.speeds : [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2])
+    .map(Number).filter(function (n) { return n > 0; });
+  if (SPEEDS.indexOf(1) < 0) SPEEDS.push(1);
+  SPEEDS.sort(function (a, b) { return a - b; });
+
+  function keyLabel(k) {
+    var names = { ' ': 'Space', arrowleft: '←', arrowright: '→', arrowup: '↑', arrowdown: '↓', escape: 'Esc' };
+    if (names[k]) return names[k];
+    return k.length === 1 ? k.toUpperCase() : k.charAt(0).toUpperCase() + k.slice(1);
+  }
+  function kbds(actions) {
+    return actions.map(function (a) {
+      return KEYS[a].length ? '<kbd>' + keyLabel(KEYS[a][0]) + '</kbd>' : '';
+    }).join('');
+  }
+  function shortcutHint(action) { return KEYS[action].length ? ' (' + keyLabel(KEYS[action][0]) + ')' : ''; }
+
+  // ---------------------------------------------------------------------------
+  // Keyboard guides (editor/key-guide.html): full above the player, small under the mini player
+  // ---------------------------------------------------------------------------
+  // each entry: the actions it covers, and its label in the full and small guide
+  // (`one` is used when only one action of a pair still has a key)
+  var GUIDE = [
+    { actions: ['play_pause'], full: 'play / pause', mini: 'play' },
+    { actions: ['back', 'forward'], full: SKIP + ' s back / forward', mini: '\u00b1' + SKIP + 's',
+      one: { back: [SKIP + ' s back', '\u2212' + SKIP + 's'], forward: [SKIP + ' s forward', '+' + SKIP + 's'] } },
+    { actions: ['faster', 'slower'], full: 'faster / slower', mini: 'speed',
+      one: { faster: ['faster', 'faster'], slower: ['slower', 'slower'] } },
+    { actions: ['normal_speed'], full: 'normal speed', mini: '1\u00d7' },
+    { actions: ['next_line', 'previous_line'], full: 'next / previous line', mini: 'line',
+      one: { next_line: ['next line', 'next'], previous_line: ['previous line', 'prev'] } }
+  ];
+  document.querySelectorAll('.editor-key-guide').forEach(function (box) {
+    var size = box.getAttribute('data-size') === 'mini' ? 'mini' : 'full';
+    var parts = [];
+    GUIDE.forEach(function (g) {
+      var on = g.actions.filter(function (a) { return KEYS[a].length; });
+      if (!on.length) return;
+      var label = (on.length === 1 && g.one) ? g.one[on[0]][size === 'full' ? 0 : 1] : g[size];
+      parts.push(kbds(on) + ' ' + label);
+    });
+    if (size === 'full') { parts.push('<kbd>Tab</kbd> timestamps &amp; line numbers'); }
+    box.innerHTML = parts.join('<span class="sep">&middot;</span>');
+  });
+
+  // ---------------------------------------------------------------------------
+  // CSV line numbers (links that open the CSV at that line) and flags,
+  // added under OHD's own transcript markup
   // ---------------------------------------------------------------------------
   var rows = { lines: [], flags: [] };
   try { rows = JSON.parse(document.getElementById('editor-rows').textContent); } catch (e) {}
   var lines = Array.prototype.slice.call(document.querySelectorAll('#contents-container .line'));
   var csvName = {{ page.source_csv | default: "" | jsonify }};
+  var csvPath = {{ page.source_csv_abs | default: "" | jsonify }};
+  var opener = settings.open_in === undefined ? 'vscode' : String(settings.open_in || 'none').toLowerCase();
+  var EDITOR_NAMES = { vscode: 'VS Code', 'vscode-insiders': 'VS Code Insiders', cursor: 'Cursor', vscodium: 'VSCodium' };
+
+  // e.g. vscode://file/Users/me/ohmsi-kit/C/interview01.csv:12:1
+  function lineUrl(n) {
+    if (!csvPath || opener === 'none' || !/^[a-z][a-z0-9+.-]*$/.test(opener)) return null;
+    var path = csvPath.replace(/\\/g, '/');
+    if (path.charAt(0) !== '/') path = '/' + path;
+    path = encodeURI(path).replace(/#/g, '%23').replace(/\?/g, '%3F');
+    return opener + '://file' + path + ':' + n + ':1';
+  }
+
   lines.forEach(function (line, i) {
     var n = rows.lines[i];
     var stampCol = line.querySelector('.timestamp');
     if (n && stampCol) {
-      var tag = document.createElement('div');
+      var url = lineUrl(n);
+      var tag = document.createElement(url ? 'a' : 'div');
       tag.className = 'csv-line';
-      tag.title = 'Line ' + n + ' in ' + csvName;
       tag.textContent = 'L' + n;
-      stampCol.appendChild(tag);
+      if (url) {
+        var app = EDITOR_NAMES[opener] || opener;
+        tag.href = url;
+        tag.title = 'Open line ' + n + ' of ' + csvName + ' in ' + app;
+        tag.setAttribute('aria-label', 'CSV line ' + n + ', open in ' + app);
+      } else {
+        tag.title = 'Line ' + n + ' in ' + csvName;
+      }
+      // keep the line number on its own line under the timestamp
+      var wrap = document.createElement('div');
+      wrap.appendChild(tag);
+      stampCol.appendChild(wrap);
     }
     var flag = rows.flags[i];
     if (flag) {
@@ -85,28 +181,80 @@
   });
 
   // ---------------------------------------------------------------------------
-  // Speed and skip buttons
+  // Controls: skip, speed, with a brief highlight on the control that was used
   // ---------------------------------------------------------------------------
-  var rate = document.getElementById('editor-rate');
-  if (rate) {
-    var savedRate = load('ohd-editor:rate');
-    if (savedRate) { rate.value = savedRate; }
-    audio.playbackRate = parseFloat(rate.value) || 1;
-    rate.addEventListener('change', function () {
-      audio.playbackRate = parseFloat(rate.value) || 1;
-      save('ohd-editor:rate', rate.value);
-    });
-    audio.addEventListener('loadedmetadata', function () { audio.playbackRate = parseFloat(rate.value) || 1; });
+  var announcer = document.getElementById('editor-announce');
+  function announce(msg) { if (announcer) { announcer.textContent = msg; } }
+  function flash(el) {
+    if (!el) return;
+    el.classList.remove('editor-flash');
+    void el.offsetWidth; // restart the highlight if it is already showing
+    el.classList.add('editor-flash');
+    clearTimeout(el._editorFlash);
+    el._editorFlash = setTimeout(function () { el.classList.remove('editor-flash'); }, 450);
+  }
+  function togglePlay() { if (audio.paused) { audio.play(); } else { audio.pause(); } }
+
+  var skipBack = document.querySelector('#editor-tools [data-skip="-1"]');
+  var skipForward = document.querySelector('#editor-tools [data-skip="1"]');
+  var slowerBtn = document.querySelector('#editor-tools [data-speed="-1"]');
+  var fasterBtn = document.querySelector('#editor-tools [data-speed="1"]');
+  var rateBtn = document.getElementById('editor-rate');
+  var ratePop = document.getElementById('editor-rate-pop');
+
+  function skip(dir) {
+    audio.currentTime = Math.min(audio.duration || Infinity, Math.max(0, audio.currentTime + dir * SKIP));
+    flash(dir < 0 ? skipBack : skipForward);
   }
 
-  document.querySelectorAll('#editor-tools [data-skip]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      audio.currentTime = Math.max(0, audio.currentTime + parseFloat(btn.getAttribute('data-skip')));
-    });
+  function fmtRate(r) { return String(Math.round(r * 100) / 100) + '×'; }
+  function setRate(r, opts) {
+    opts = opts || {};
+    audio.playbackRate = r;
+    save('ohd-editor:rate', String(r));
+    if (rateBtn) {
+      rateBtn.textContent = fmtRate(r);
+      rateBtn.setAttribute('aria-label', 'Playback speed ' + (Math.round(r * 100) / 100) + ' times. Select for normal speed');
+    }
+    if (opts.quiet) return;
+    flash(rateBtn);
+    if (opts.from) flash(opts.from);
+    if (ratePop) {
+      ratePop.textContent = Math.round(r * 100) + '%';
+      ratePop.classList.add('show');
+      clearTimeout(ratePop._editorPop);
+      ratePop._editorPop = setTimeout(function () { ratePop.classList.remove('show'); }, 1100);
+    }
+    announce('Speed ' + Math.round(r * 100) + ' percent');
+  }
+  function stepRate(dir) {
+    var i = SPEEDS.indexOf(audio.playbackRate);
+    if (i < 0) {
+      // between configured steps: move to the nearest step in that direction
+      i = dir > 0 ? SPEEDS.findIndex(function (s) { return s > audio.playbackRate; }) - 1
+                  : SPEEDS.findIndex(function (s) { return s >= audio.playbackRate; });
+      if (i < -1) i = SPEEDS.length - 1;
+    }
+    var next = SPEEDS[Math.min(SPEEDS.length - 1, Math.max(0, i + dir))];
+    setRate(next, { from: dir > 0 ? fasterBtn : slowerBtn });
+  }
+
+  var savedRate = parseFloat(load('ohd-editor:rate'));
+  setRate(savedRate > 0 ? savedRate : 1, { quiet: true });
+  // some browsers reset the rate when a new source loads
+  audio.addEventListener('loadedmetadata', function () {
+    var r = parseFloat(load('ohd-editor:rate'));
+    audio.playbackRate = r > 0 ? r : 1;
   });
 
+  if (skipBack) { skipBack.title = 'Back ' + SKIP + ' seconds' + shortcutHint('back'); skipBack.addEventListener('click', function () { skip(-1); }); }
+  if (skipForward) { skipForward.title = 'Forward ' + SKIP + ' seconds' + shortcutHint('forward'); skipForward.addEventListener('click', function () { skip(1); }); }
+  if (slowerBtn) { slowerBtn.title = 'Slower' + shortcutHint('slower'); slowerBtn.addEventListener('click', function () { stepRate(-1); }); }
+  if (fasterBtn) { fasterBtn.title = 'Faster' + shortcutHint('faster'); fasterBtn.addEventListener('click', function () { stepRate(1); }); }
+  if (rateBtn) { rateBtn.title = 'Normal speed' + shortcutHint('normal_speed'); rateBtn.addEventListener('click', function () { setRate(1); }); }
+
   // ---------------------------------------------------------------------------
-  // Highlight the line being spoken
+  // Highlight the line being spoken; jump to the next / previous line
   // ---------------------------------------------------------------------------
   var starts = lines.map(function (line) {
     var btn = line.querySelector('[data-timestamp]');
@@ -124,35 +272,73 @@
     }
     return found;
   }
-  audio.addEventListener('timeupdate', function () {
-    var t = audio.currentTime;
-    if (Math.abs(t - lastSaved) >= 1) { save(fileKey + ':time', String(t)); lastSaved = t; }
-    var i = lineAt(t);
+  function markCurrent(i) {
     if (i === current) return;
     if (current >= 0 && lines[current]) lines[current].classList.remove('editor-current');
     current = i;
-    if (i < 0) return;
-    lines[i].classList.add('editor-current');
+    if (i >= 0) lines[i].classList.add('editor-current');
+  }
+  audio.addEventListener('timeupdate', function () {
+    var t = audio.currentTime;
+    if (Math.abs(t - lastSaved) >= 1) { save(fileKey + ':time', String(t)); lastSaved = t; }
+    markCurrent(lineAt(t));
   });
 
+  function inView(el) {
+    var r = el.getBoundingClientRect();
+    return r.top >= 0 && r.bottom <= window.innerHeight;
+  }
+  // dir +1: next line with a timestamp, -1: previous one
+  function jumpLine(dir) {
+    var j = lineAt(audio.currentTime);
+    do { j += dir; } while (j >= 0 && j < starts.length && isNaN(starts[j]));
+    if (j < 0 || j >= starts.length) return;
+    audio.currentTime = starts[j];
+    markCurrent(j);
+    var p = audio.play();
+    if (p && p.catch) { p.catch(function () {}); }
+    if (!inView(lines[j])) { lines[j].scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' }); }
+  }
+
   // ---------------------------------------------------------------------------
-  // Keyboard: Space play/pause, left/right arrows 5 seconds
+  // Keyboard shortcuts (set under `editor: keys:` in _config.yml).
+  // Keys are left alone while typing in a field, choosing in a menu, or using the
+  // browser's own player controls; the arrow keys Up and Down keep scrolling the page.
   // ---------------------------------------------------------------------------
+  var ACTIONS = {
+    play_pause: togglePlay,
+    back: function () { skip(-1); },
+    forward: function () { skip(1); },
+    faster: function () { stepRate(1); },
+    slower: function () { stepRate(-1); },
+    normal_speed: function () { setRate(1); },
+    next_line: function () { jumpLine(1); },
+    previous_line: function () { jumpLine(-1); }
+  };
+  function actionFor(key) {
+    var k = key === 'Spacebar' ? ' ' : String(key).toLowerCase();
+    for (var a in KEYS) { if (KEYS[a].indexOf(k) >= 0) return a; }
+    return null;
+  }
+  function typingOrChoosing(el) {
+    if (!el) return false;
+    return el.isContentEditable || /^(INPUT|SELECT|TEXTAREA|OPTION)$/.test(el.tagName) ||
+      el.tagName === 'AUDIO' || !!(el.closest && el.closest('audio'));
+  }
+
   document.addEventListener('keydown', function (e) {
-    if (e.altKey || e.ctrlKey || e.metaKey) return;
-    var el = document.activeElement;
-    var tag = el ? el.tagName : '';
-    if (/^(INPUT|SELECT|TEXTAREA|BUTTON|AUDIO|A)$/.test(tag) || (el && el.isContentEditable)) return;
-    if (e.key === ' ') {
-      e.preventDefault();
-      if (audio.paused) { audio.play(); } else { audio.pause(); }
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      audio.currentTime = Math.max(0, audio.currentTime - 5);
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      audio.currentTime = audio.currentTime + 5;
-    }
+    if (e.altKey || e.ctrlKey || e.metaKey || e.isComposing) return;
+    if (typingOrChoosing(e.target)) return;
+    var action = actionFor(e.key);
+    if (!action) return;
+    e.preventDefault();
+    if (action === 'play_pause' && e.repeat) return;
+    ACTIONS[action]();
+  });
+
+  // a focused button "clicks" when Space is released; stop that when Space is a shortcut
+  document.addEventListener('keyup', function (e) {
+    if (actionFor(e.key) && !typingOrChoosing(e.target) && (e.key === ' ' || e.key === 'Spacebar')) { e.preventDefault(); }
   });
 })();
 </script>

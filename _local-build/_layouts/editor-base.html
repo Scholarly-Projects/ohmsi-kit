@@ -20,12 +20,7 @@
         <p class="editor-site-description mb-0">{{ site.description }}</p>
       </div>
     </header>
-    <div class="editor-nav bg-dark text-light no-print">
-      <div class="container py-2 small">
-        Editing workspace{% if page.source_csv %} &middot; <code class="text-warning">{{ page.source_csv }}</code>{% endif %}
-        <span class="text-white-50">&middot; local preview, not published</span>
-      </div>
-    </div>
+    <div class="editor-nav bg-dark no-print" aria-hidden="true"></div>
 
     <main id="maincontent" role="main" class="flex-shrink-0">
       <div class="container py-3">

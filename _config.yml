@@ -41,6 +41,34 @@ editor:
   # The copy is made once per recording and kept in .jekyll-cache/editor-audio/.
   playback_copy: auto
 
+  # PLAYBACK CONTROLS
+  # seconds moved by the back / forward buttons and keys
+  skip_seconds: 5
+  # speeds the faster / slower buttons and keys step through
+  speeds: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
+
+  # KEYBOARD SHORTCUTS
+  # One key per action, or a list such as [n, j]. Use letters or digits as typed,
+  # Space, or a key name: ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Enter, Escape.
+  # Leave an action empty ("") to turn its shortcut off. The keyboard guide on the
+  # page updates to match. Shortcuts are ignored while typing in the search box or
+  # choosing from a menu.
+  keys:
+    play_pause: Space
+    back: ArrowLeft
+    forward: ArrowRight
+    faster: i
+    slower: d
+    normal_speed: "0"
+    next_line: n
+    previous_line: p
+
+  # LINE NUMBERS
+  # Selecting a grey line number under a timestamp opens the CSV at that line in
+  # this editor: vscode, vscode-insiders, cursor or vscodium. Use "none" to turn
+  # the links off.
+  open_in: vscode
+
 ##########
 # WHERE JEKYLL'S FILES LIVE
 #

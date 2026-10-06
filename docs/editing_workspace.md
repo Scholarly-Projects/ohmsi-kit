@@ -47,16 +47,54 @@ The page header takes its title and description from `title` and `description` i
 
 ### Editor-only additions
 
-| Feature | How |
-|---|---|
-| Jump to a line | Click its timestamp (OHD behavior) |
-| Play / pause | `Space` (when the focus isn't on a button or field) |
-| Back / forward 5 seconds | `←` / `→`, or the −5s / +5s buttons (also in the mini player) |
-| Playback speed | Speed menu (also in the mini player; remembered) |
-| See which line is playing | The line being spoken is highlighted in yellow |
-| Find a line in the CSV | The grey **L** number under each timestamp is its line number in the CSV; in VS Code press `Ctrl+G` and type it |
+**Player controls.** Under the player (and in the scrolling mini player): −5s / +5s, and a speed control with − / + and a readout (select the readout to return to normal speed). Each control flashes yellow when used, by mouse or keyboard, and a speed change briefly shows the new speed as a percentage.
 
-These are marked `no-print` and don't appear in printouts. Filtering, search and Reset Filters come from the OHD filter bar above the transcript.
+**Keyboard shortcuts** (the defaults; see [Changing the shortcuts](#changing-the-shortcuts)):
+
+| Key | Does |
+|---|---|
+| `Space` | Play / pause, including while a timestamp or line number has focus |
+| `←` / `→` | Back / forward 5 seconds |
+| `I` / `D` | Faster / slower, stepping through 0.5×, 0.75×, 1×, 1.25×, 1.5×, 1.75×, 2× |
+| `0` | Normal speed (1×) |
+| `N` / `P` | Jump playback to the next / previous line (scrolls it into view if needed) |
+| `Tab` / `Shift`+`Tab` | Move through the timestamps and line numbers; `Enter` on a timestamp jumps playback there |
+| `↑` / `↓` | Scroll the page, as usual |
+
+A keyboard guide sits at the top right above the player; a smaller one sits under the mini player when you scroll down. Both list the shortcuts as configured. Shortcuts are ignored while you type in the search box, choose from a menu, or use the browser's own player controls. Speed changes are announced to screen readers.
+
+**Line numbers.** The grey **L** number under each timestamp is that line of the CSV. Select it (click, or `Tab` to it and press `Enter`) to open the CSV in VS Code with the cursor on that line. The first time, the browser asks permission to open VS Code; allow it (and tick "always allow" if offered).
+
+**Line being spoken.** Highlighted in yellow with a black left edge. The timestamp or line number you've tabbed to has a black outline.
+
+These additions are marked `no-print` and don't appear in printouts. Filtering, search and Reset Filters come from the OHD filter bar above the transcript.
+
+### Changing the shortcuts
+
+All of these settings are under `editor:` in `_config.yml` at the toolkit root. After changing them, stop the server and run `bundle exec jekyll s` again.
+
+```yaml
+editor:
+  skip_seconds: 5                       # length of the back / forward skip
+  speeds: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]   # steps for faster / slower
+  keys:
+    play_pause: Space
+    back: ArrowLeft
+    forward: ArrowRight
+    faster: i
+    slower: d
+    normal_speed: "0"
+    next_line: n
+    previous_line: p
+  open_in: vscode                       # vscode, vscode-insiders, cursor, vscodium, or none
+```
+
+- Give each action one key, or a list such as `next_line: [n, j]`.
+- Use letters and digits as typed (put digits and symbols in quotes: `"0"`, `"]"`), `Space`, or a key name: `ArrowLeft`, `ArrowRight`, `ArrowUp`, `ArrowDown`, `Enter`, `Escape`. Letters work with or without Shift.
+- Set an action to `""` to turn its shortcut off; its button still works.
+- Avoid `Tab` and `Enter`, which move between and activate timestamps and line numbers.
+- The keyboard guides, button labels and tooltips update to match.
+- `open_in` picks the editor that line numbers open; `none` shows them as plain text.
 
 ### Checks and warnings
 
@@ -127,7 +165,7 @@ _local-build/
 | `_plugins/editor_workspace.rb` | Finds the CSV in `C/` and the recording in `A/`, makes the playback copy, checks the CSV, generates the page, publishes `assets/`, serves the recording in short pieces, and prints the workspace address |
 | `_layouts/editor.html` | The workspace page, following OHD `_layouts/transcript.html` |
 | `_layouts/editor-base.html` | Page shell approximating the OHD item page: title banner, breadcrumb, item title, footer, back-to-top button |
-| `_includes/editor/` | Editor controls under the player, status panel, back-to-top button, editor script and styles |
+| `_includes/editor/` | Player controls, keyboard guides, status panel, back-to-top button, editor script and styles |
 
 ### Files copied from the OHD template, unchanged
 

@@ -147,6 +147,8 @@ module EditorWorkspace
           'objectid' => key,
           'object-transcript' => key,
           'source_csv' => "#{dirs['transcript']}/#{filename}",
+          # full path, for the line-number links that open the CSV in VS Code
+          'source_csv_abs' => File.expand_path(csv_path),
           'row_count' => (rows || []).size,
           'columns' => columns || [],
           'audio' => find_audio(site, dirs['audio'], basename, preference, copy_mode)

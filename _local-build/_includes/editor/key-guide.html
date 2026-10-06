@@ -1,0 +1,6 @@
+<!-- editor: _includes/editor/key-guide.html
+     Keyboard guide. size="full" sits at the top right above the player; size="mini" sits
+     under the scrolling mini player. editor-js.html fills both from `editor: keys:` in
+     _config.yml, so the guide always matches the configured shortcuts. -->
+<div class="editor-key-guide no-print{% if include.size == 'full' %} text-md-end mb-2{% else %} mt-1{% endif %}"
+  data-size="{{ include.size | default: 'full' }}" role="note" aria-label="Keyboard shortcuts"></div>

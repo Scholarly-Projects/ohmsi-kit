@@ -1,20 +1,21 @@
 <!-- editor: _includes/editor/player-tools.html
-     Editor-only controls under the OHD player. The skip and speed controls stay
-     available in the scrolling mini player; the rest is hidden there (editor-style.html). -->
+     Editor-only controls under the OHD player, also shown in the scrolling mini player.
+     Buttons flash when used, by mouse or keyboard (editor-js.html, editor-style.html). -->
+{% assign skip = site.editor.skip_seconds | default: 5 %}
 <div id="editor-tools" class="d-flex flex-wrap align-items-center gap-2 small mt-2 no-print">
-  <button type="button" class="btn btn-sm btn-outline-secondary" data-skip="-5" title="Back 5 seconds">&minus;5s</button>
-  <button type="button" class="btn btn-sm btn-outline-secondary" data-skip="5" title="Forward 5 seconds">+5s</button>
-  <label class="d-flex align-items-center gap-1 mb-0">Speed
-    <select id="editor-rate" class="form-select form-select-sm w-auto">
-      <option value="0.5">0.5&times;</option>
-      <option value="0.75">0.75&times;</option>
-      <option value="1" selected>1&times;</option>
-      <option value="1.25">1.25&times;</option>
-      <option value="1.5">1.5&times;</option>
-      <option value="2">2&times;</option>
-    </select>
-  </label>
+  <div class="btn-group btn-group-sm" role="group" aria-label="Skip back or forward">
+    <button type="button" class="btn btn-outline-secondary" data-skip="-1" aria-label="Back {{ skip }} seconds">&minus;{{ skip }}s</button>
+    <button type="button" class="btn btn-outline-secondary" data-skip="1" aria-label="Forward {{ skip }} seconds">+{{ skip }}s</button>
+  </div>
+  <span class="editor-speed-label text-muted">Speed</span>
+  <div class="btn-group btn-group-sm" role="group" aria-label="Playback speed">
+    <button type="button" class="btn btn-outline-secondary" data-speed="-1" aria-label="Slower">&minus;</button>
+    <button type="button" class="btn btn-outline-secondary" id="editor-rate" aria-label="Playback speed 1 times. Select for normal speed">1&times;</button>
+    <button type="button" class="btn btn-outline-secondary" data-speed="1" aria-label="Faster">+</button>
+  </div>
+  <span id="editor-rate-pop" class="editor-rate-pop" aria-hidden="true"></span>
   {%- comment -%} fallback only: editor-js shows this when the page has no OHD Reset Filters button {%- endcomment -%}
   {% if site.data.filters %}<button type="button" id="editor-reset" class="btn btn-sm btn-outline-primary d-none">Reset filters</button>{% endif %}
-  <span class="editor-hint text-muted ms-md-auto">Space play/pause &middot; &larr;/&rarr; 5s</span>
+  <span id="editor-announce" class="visually-hidden" aria-live="polite"></span>
 </div>
+{% include editor/key-guide.html size="mini" %}
