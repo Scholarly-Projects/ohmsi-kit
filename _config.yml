@@ -98,13 +98,14 @@ livereload: true
 ##########
 # BUILD SETTINGS
 #
-# Keep the Python toolkit, the recordings and the generated CSVs out of the build and
-# stop Jekyll rebuilding when they change. (The recording that matches the CSV in C/
-# is added by the editor plugin.)
+# Keep the Python toolkit, the recordings, and the generated and finished CSVs out of the
+# build and stop Jekyll rebuilding when they change. (The recording that matches the CSV
+# in C/ is added by the editor plugin.)
 # Do NOT exclude C/: Jekyll only watches for saves in folders that are included.
 exclude:
   - A/
   - B/
+  - D/
   - docs/
   - "*.py"
   - requirements.txt
