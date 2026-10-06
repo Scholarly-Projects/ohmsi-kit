@@ -1,0 +1,270 @@
+/* 
+    SCSS from the Oral History as Data project
+*/
+
+.words {
+   @media screen and (max-width: 576px) {
+        min-width: 250px;
+    }
+}
+
+.toggle_int:hover {
+    color: pink
+}
+
+.toggle_int small {
+    font-size: 12px;
+}
+
+.featured {
+    background-color: aquamarine !important;
+    color: black !important;
+}
+
+.border-featured {
+    border-left: 1px solid black !important;
+    border-left-width: thick !important;
+    background-color: aquamarine !important;
+}
+
+.btn-outline-dark:hover {
+    background-color: #212529 !important;
+}
+
+.legendTag, .transcriptTitle {
+    cursor: pointer;
+}
+.tableTimestamp {
+    width:10%;
+    vertical-align:top;
+}
+
+// tab to show/hide  filters options for transcripts
+
+.filter-tab {
+    position: absolute;
+    bottom:-17px;
+    right: 0%;
+    transform: translateY(50%);    
+    border-radius: 0 0 5px 5px;
+    cursor: pointer;
+    transition: all 0.5s ease;
+  }
+
+  .filter-tab:hover {
+    background-color: #0056b3;
+  }
+
+  #filters-search.retracted {
+    transform: translateY(-100%);
+    transition: all 0.5s ease;
+    #show-filters-text{
+        display:block;
+    }
+    #hide-filters-text{
+        display:none;
+    }
+  }
+
+  #filters-search {
+    transition: transform 0.5s ease;
+    #show-filters-text{
+        display:none;
+    }
+    #hide-filters-text{
+        display:block;
+    }
+}
+
+.timestamp-link{
+    color: #436a71 !important;
+    text-decoration: none !important;
+}
+
+.skip-link {
+    position: absolute;
+    background: white;
+    z-index: 1000;
+    border: 1px solid #333;
+    text-decoration: underline;
+  }
+  .skip-link:focus {
+    clip: auto;
+    height: auto;
+    width: auto;
+  }
+
+// ============================================================================
+// LANGUAGE TOGGLE STYLES
+// Controls visibility of English/Spanish transcript text
+// ============================================================================
+
+// Default: Show English, hide Spanish
+.lang-es {
+    display: none;
+}
+
+.lang-en {
+    display: inline;
+}
+
+// When Spanish is active: Show Spanish, hide English
+body.show-spanish {
+    .lang-es {
+        display: inline;
+    }
+    .lang-en {
+        display: none;
+    }
+}
+
+// Toggle Switch Styling
+.lang-switch {
+    position: relative;
+    display: inline-block;
+    width: 80px;
+    height: 34px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.lang-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.lang-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #004085; // Darker blue for better contrast
+    border-radius: 34px;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    border: 2px solid #002752; // Dark border for definition
+}
+
+.lang-slider:before {
+    content: "";
+    position: absolute;
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
+    z-index: 2;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); // Shadow for depth
+}
+
+// When checked (Spanish mode)
+.lang-switch input:checked + .lang-slider:before {
+    transform: translateX(46px);
+}
+
+// Language labels
+.lang-label-en,
+.lang-label-es {
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    z-index: 1;
+    user-select: none;
+}
+
+
+
+
+// Focus state for accessibility
+.lang-switch input:focus + .lang-slider {
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+
+@media print {
+
+    html,
+    body {
+        height: 100%;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible;
+        display: block;
+        font-size: 11pt; // Standard readable print size
+        line-height: 1.4;
+    }
+
+    .transcript-content {
+        height: auto;
+        min-height: 5000px;
+        overflow: visible;
+        display: block;
+    }
+
+    // Print only the active language (preserve toggle behavior)
+    body.show-spanish .lang-en {
+        display: none !important;
+    }
+
+    body.show-spanish .lang-es {
+        display: inline !important;
+    }
+
+    body:not(.show-spanish) .lang-es {
+        display: none !important;
+    }
+
+    body:not(.show-spanish) .lang-en {
+        display: inline !important;
+    }
+
+    // Hide timestamps completely in print
+    .timestamp {
+        display: none !important;
+    }
+
+    // Clean up container padding and borders
+    #contents-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+    }
+
+    // Remove Bootstrap row layout for print
+    .line.row {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        page-break-inside: avoid;
+        margin-bottom: 0.75em !important;
+    }
+
+    // Ensure paragraphs flow naturally
+    .words {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 0 0.5em 0 !important;
+    }
+
+    // Make speaker names stand out
+    .words .fw-bold {
+        font-weight: 700 !important;
+        display: inline !important;
+    }
+
+    // Hide visualization and filters
+    #colorViz,
+    .no-print,
+    .d-print-none {
+        display: none !important;
+    }
+
+}
