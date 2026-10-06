@@ -2,6 +2,7 @@
      Editor-only controls under the OHD player, also shown in the scrolling mini player.
      Buttons flash when used, by mouse or keyboard (editor-js.html, editor-style.html). -->
 {% assign skip = site.editor.skip_seconds | default: 5 %}
+{% assign loop_seconds = site.editor.loop_seconds | default: 5 %}
 <div id="editor-tools" class="d-flex flex-wrap align-items-center gap-2 small mt-2 no-print">
   <div class="btn-group btn-group-sm" role="group" aria-label="Skip back or forward">
     <button type="button" class="btn btn-outline-secondary" data-skip="-1" aria-label="Back {{ skip }} seconds">&minus;{{ skip }}s</button>
@@ -13,6 +14,8 @@
     <button type="button" class="btn btn-outline-secondary" id="editor-rate" aria-label="Playback speed 1 times. Select for normal speed">1&times;</button>
     <button type="button" class="btn btn-outline-secondary" data-speed="1" aria-label="Faster">+</button>
   </div>
+  <button type="button" class="btn btn-sm btn-outline-secondary" id="editor-loop" aria-pressed="false"
+    aria-label="Loop the last {{ loop_seconds }} seconds">&#x27F2;<span class="editor-loop-word"> Loop</span> {{ loop_seconds }}s</button>
   <span id="editor-rate-pop" class="editor-rate-pop" aria-hidden="true"></span>
   {%- comment -%} fallback only: editor-js shows this when the page has no OHD Reset Filters button {%- endcomment -%}
   {% if site.data.filters %}<button type="button" id="editor-reset" class="btn btn-sm btn-outline-primary d-none">Reset filters</button>{% endif %}

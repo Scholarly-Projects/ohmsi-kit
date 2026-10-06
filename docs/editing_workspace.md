@@ -47,7 +47,7 @@ The page header takes its title and description from `title` and `description` i
 
 ### Editor-only additions
 
-**Player controls.** Under the player (and in the scrolling mini player): −5s / +5s, and a speed control with − / + and a readout (select the readout to return to normal speed). Each control flashes yellow when used, by mouse or keyboard, and a speed change briefly shows the new speed as a percentage.
+**Player controls.** Under the player (and in the scrolling mini player): −5s / +5s; a speed control with − / + and a readout (select the readout to return to normal speed); and ⟲ Loop 5s. Each control flashes yellow when used, by mouse or keyboard; the Loop button stays yellow while a loop runs. A short note beside the controls briefly shows a new speed as a percentage, a loop's range, or a copied time.
 
 **Keyboard shortcuts** (the defaults; see [Changing the shortcuts](#changing-the-shortcuts)):
 
@@ -58,12 +58,18 @@ The page header takes its title and description from `title` and `description` i
 | `I` / `D` | Faster / slower, stepping through 0.5×, 0.75×, 1×, 1.25×, 1.5×, 1.75×, 2× |
 | `0` | Normal speed (1×) |
 | `N` / `P` | Jump playback to the next / previous line (scrolls it into view if needed) |
+| `L` | Loop the last 5 seconds, from the moment you press it, until you stop it (see below) |
+| `C` | Continue: end a loop and carry on playing from that point |
+| `T` | Copy the current playback time, in the CSV's timestamp format (`00:12:03`), to paste into a timestamp you're correcting |
 | `Tab` / `Shift`+`Tab` | Move through the timestamps and line numbers; `Enter` on a timestamp jumps playback there |
 | `↑` / `↓` | Scroll the page, as usual |
 
 A keyboard guide sits at the top right above the player; a smaller one sits under the mini player when you scroll down. Both list the shortcuts as configured. Shortcuts are ignored while you type in the search box, choose from a menu, or use the browser's own player controls. Speed changes are announced to screen readers.
 
+**Looping.** `L` (or the Loop button) replays the 5 seconds before the moment you pressed it, over and over, so you can listen to a hard passage while you correct it in VS Code. Slowing it down (`D`) or speeding it up (`I`, `0`) keeps the loop going. It ends with `C` (playback carries on from there), `L` again, or anything that moves or stops playback: `Space` (pauses), `←` / `→`, `N` / `P`, a timestamp, or the player's own scrubber.
+
 **Line numbers.** The grey **L** number under each timestamp is that line of the CSV. Select it (click, or `Tab` to it and press `Enter`) to open the CSV in VS Code with the cursor on that line. The first time, the browser asks permission to open VS Code; allow it (and tick "always allow" if offered).
+
 
 **Line being spoken.** Highlighted in yellow with a black left edge. The timestamp or line number you've tabbed to has a black outline.
 
@@ -86,6 +92,10 @@ editor:
     normal_speed: "0"
     next_line: n
     previous_line: p
+    loop: l
+    continue: c
+    copy_time: t
+  loop_seconds: 5                       # length of the loop
   open_in: vscode                       # vscode, vscode-insiders, cursor, vscodium, or none
 ```
 
@@ -96,7 +106,7 @@ editor:
 - The keyboard guides, button labels and tooltips update to match.
 - `open_in` picks the editor that line numbers open; `none` shows them as plain text.
 
-### Checks and warnings
+## Checks and warnings
 
 On each rebuild the workspace checks the CSV and lists problems in the status area (and in the terminal):
 

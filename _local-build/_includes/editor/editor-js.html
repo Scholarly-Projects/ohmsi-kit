@@ -17,7 +17,8 @@
   // ---------------------------------------------------------------------------
   var DEFAULT_KEYS = {
     play_pause: 'Space', back: 'ArrowLeft', forward: 'ArrowRight',
-    faster: 'i', slower: 'd', normal_speed: '0', next_line: 'n', previous_line: 'p'
+    faster: 'i', slower: 'd', normal_speed: '0', next_line: 'n', previous_line: 'p',
+    loop: 'l', continue: 'c', copy_time: 't'
   };
   // each action -> list of KeyboardEvent.key values (lower case); [] turns it off
   function keyList(value) {
@@ -35,6 +36,7 @@
     KEYS[action] = keyList(configured ? settings.keys[action] : DEFAULT_KEYS[action]);
   });
   var SKIP = parseFloat(settings.skip_seconds) > 0 ? parseFloat(settings.skip_seconds) : 5;
+  var LOOP = parseFloat(settings.loop_seconds) > 0 ? parseFloat(settings.loop_seconds) : 5;
   var SPEEDS = (Array.isArray(settings.speeds) ? settings.speeds : [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2])
     .map(Number).filter(function (n) { return n > 0; });
   if (SPEEDS.indexOf(1) < 0) SPEEDS.push(1);
@@ -65,7 +67,10 @@
       one: { faster: ['faster', 'faster'], slower: ['slower', 'slower'] } },
     { actions: ['normal_speed'], full: 'normal speed', mini: '1\u00d7' },
     { actions: ['next_line', 'previous_line'], full: 'next / previous line', mini: 'line',
-      one: { next_line: ['next line', 'next'], previous_line: ['previous line', 'prev'] } }
+      one: { next_line: ['next line', 'next'], previous_line: ['previous line', 'prev'] } },
+    { actions: ['loop', 'continue'], full: 'loop last ' + LOOP + ' s / continue', mini: 'loop',
+      one: { loop: ['loop last ' + LOOP + ' s', 'loop'], 'continue': ['continue after a loop', 'go on'] } },
+    { actions: ['copy_time'], full: 'copy time', mini: 'copy' }
   ];
   document.querySelectorAll('.editor-key-guide').forEach(function (box) {
     var size = box.getAttribute('data-size') === 'mini' ? 'mini' : 'full';
@@ -181,7 +186,7 @@
   });
 
   // ---------------------------------------------------------------------------
-  // Controls: skip, speed, with a brief highlight on the control that was used
+  // Controls: skip, speed, loop, with a brief highlight on the control that was used
   // ---------------------------------------------------------------------------
   var announcer = document.getElementById('editor-announce');
   function announce(msg) { if (announcer) { announcer.textContent = msg; } }
@@ -193,20 +198,81 @@
     clearTimeout(el._editorFlash);
     el._editorFlash = setTimeout(function () { el.classList.remove('editor-flash'); }, 450);
   }
-  function togglePlay() { if (audio.paused) { audio.play(); } else { audio.pause(); } }
+  // short message beside the controls (new speed, copied time, loop range), then collapses
+  var pop = document.getElementById('editor-rate-pop');
+  function showPop(text, ms) {
+    if (!pop) return;
+    pop.textContent = text;
+    pop.classList.add('show');
+    clearTimeout(pop._editorPop);
+    pop._editorPop = setTimeout(function () { pop.classList.remove('show'); }, ms || 1100);
+  }
+  function play() { var p = audio.play(); if (p && p.catch) { p.catch(function () {}); } }
 
   var skipBack = document.querySelector('#editor-tools [data-skip="-1"]');
   var skipForward = document.querySelector('#editor-tools [data-skip="1"]');
   var slowerBtn = document.querySelector('#editor-tools [data-speed="-1"]');
   var fasterBtn = document.querySelector('#editor-tools [data-speed="1"]');
   var rateBtn = document.getElementById('editor-rate');
-  var ratePop = document.getElementById('editor-rate-pop');
+  var loopBtn = document.getElementById('editor-loop');
 
+  // timestamps as written in the CSV: 00:01:18 (two-digit hours) or 0:01:18
+  var stamps = (rows.stamps || []).filter(function (t) { return t && /^\d+:\d{2}:\d{2}/.test(t); });
+  var PAD_HOURS = stamps.length ? /^\d{2,}:/.test(stamps[0]) : true;
+  function clock(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    var h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
+    return (PAD_HOURS && h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  // --- loop: replay the last LOOP seconds until something ends it ------------
+  // The workspace's own seeks are marked, so any other seek (a timestamp, the
+  // player's own scrubber) ends the loop.
+  var loop = null;
+  var ownSeeks = 0;
+  function seekTo(t) { ownSeeks++; audio.currentTime = t; }
+  function checkLoop() {
+    if (loop && audio.currentTime >= loop.end) { seekTo(loop.start); }
+  }
+  function startLoop() {
+    var end = audio.currentTime;
+    var start = Math.max(0, end - LOOP);
+    if (end - start < 0.5) { end = Math.min(audio.duration || LOOP, start + LOOP); } // at the very start
+    loop = { start: start, end: end, timer: setInterval(checkLoop, 40) };
+    seekTo(start);
+    play();
+    if (loopBtn) { loopBtn.classList.add('editor-active'); loopBtn.setAttribute('aria-pressed', 'true'); }
+    flash(loopBtn);
+    showPop('Loop ' + clock(start) + '–' + clock(end), 1600);
+    announce('Looping ' + clock(start) + ' to ' + clock(end));
+  }
+  function endLoop() {
+    if (!loop) return false;
+    clearInterval(loop.timer);
+    loop = null;
+    if (loopBtn) { loopBtn.classList.remove('editor-active'); loopBtn.setAttribute('aria-pressed', 'false'); }
+    announce('Loop off');
+    return true;
+  }
+  audio.addEventListener('timeupdate', checkLoop);
+  audio.addEventListener('seeking', function () {
+    if (ownSeeks > 0) { ownSeeks--; return; }
+    endLoop();
+  });
+  audio.addEventListener('ended', function () { if (loop) { seekTo(loop.start); play(); } });
+
+  // --- play/pause and skip (both end a loop) ---------------------------------
+  function playPause() {
+    endLoop();
+    if (audio.paused) { play(); } else { audio.pause(); }
+  }
   function skip(dir) {
-    audio.currentTime = Math.min(audio.duration || Infinity, Math.max(0, audio.currentTime + dir * SKIP));
+    endLoop();
+    seekTo(Math.min(audio.duration || Infinity, Math.max(0, audio.currentTime + dir * SKIP)));
     flash(dir < 0 ? skipBack : skipForward);
   }
 
+  // --- speed (keeps a loop running, so a hard passage can be slowed down) ----
   function fmtRate(r) { return String(Math.round(r * 100) / 100) + '×'; }
   function setRate(r, opts) {
     opts = opts || {};
@@ -219,12 +285,7 @@
     if (opts.quiet) return;
     flash(rateBtn);
     if (opts.from) flash(opts.from);
-    if (ratePop) {
-      ratePop.textContent = Math.round(r * 100) + '%';
-      ratePop.classList.add('show');
-      clearTimeout(ratePop._editorPop);
-      ratePop._editorPop = setTimeout(function () { ratePop.classList.remove('show'); }, 1100);
-    }
+    showPop(Math.round(r * 100) + '%');
     announce('Speed ' + Math.round(r * 100) + ' percent');
   }
   function stepRate(dir) {
@@ -247,11 +308,31 @@
     audio.playbackRate = r > 0 ? r : 1;
   });
 
+  // --- copy the current playback time, in the CSV's timestamp format ---------
+  function copyTime() {
+    var text = clock(audio.currentTime);
+    function done() { showPop('Copied ' + text, 1600); announce('Copied ' + text); }
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { showPop(text, 4000); }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else { fallback(); }
+  }
+
   if (skipBack) { skipBack.title = 'Back ' + SKIP + ' seconds' + shortcutHint('back'); skipBack.addEventListener('click', function () { skip(-1); }); }
   if (skipForward) { skipForward.title = 'Forward ' + SKIP + ' seconds' + shortcutHint('forward'); skipForward.addEventListener('click', function () { skip(1); }); }
   if (slowerBtn) { slowerBtn.title = 'Slower' + shortcutHint('slower'); slowerBtn.addEventListener('click', function () { stepRate(-1); }); }
   if (fasterBtn) { fasterBtn.title = 'Faster' + shortcutHint('faster'); fasterBtn.addEventListener('click', function () { stepRate(1); }); }
   if (rateBtn) { rateBtn.title = 'Normal speed' + shortcutHint('normal_speed'); rateBtn.addEventListener('click', function () { setRate(1); }); }
+  if (loopBtn) {
+    loopBtn.title = 'Loop the last ' + LOOP + ' seconds' + shortcutHint('loop') + '; select again to stop';
+    loopBtn.addEventListener('click', function () { if (!endLoop()) { startLoop(); } });
+  }
 
   // ---------------------------------------------------------------------------
   // Highlight the line being spoken; jump to the next / previous line
@@ -288,16 +369,19 @@
     var r = el.getBoundingClientRect();
     return r.top >= 0 && r.bottom <= window.innerHeight;
   }
+  function reveal(el) {
+    if (!inView(el)) { el.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' }); }
+  }
   // dir +1: next line with a timestamp, -1: previous one
   function jumpLine(dir) {
+    endLoop();
     var j = lineAt(audio.currentTime);
     do { j += dir; } while (j >= 0 && j < starts.length && isNaN(starts[j]));
     if (j < 0 || j >= starts.length) return;
-    audio.currentTime = starts[j];
+    seekTo(starts[j]);
     markCurrent(j);
-    var p = audio.play();
-    if (p && p.catch) { p.catch(function () {}); }
-    if (!inView(lines[j])) { lines[j].scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' }); }
+    play();
+    reveal(lines[j]);
   }
 
   // ---------------------------------------------------------------------------
@@ -306,14 +390,18 @@
   // browser's own player controls; the arrow keys Up and Down keep scrolling the page.
   // ---------------------------------------------------------------------------
   var ACTIONS = {
-    play_pause: togglePlay,
+    play_pause: playPause,
     back: function () { skip(-1); },
     forward: function () { skip(1); },
     faster: function () { stepRate(1); },
     slower: function () { stepRate(-1); },
     normal_speed: function () { setRate(1); },
     next_line: function () { jumpLine(1); },
-    previous_line: function () { jumpLine(-1); }
+    previous_line: function () { jumpLine(-1); },
+    loop: function () { if (!endLoop()) { startLoop(); } },
+    // end a loop and carry on playing from where it is
+    'continue': function () { endLoop(); play(); },
+    copy_time: copyTime
   };
   function actionFor(key) {
     var k = key === 'Spacebar' ? ' ' : String(key).toLowerCase();
@@ -332,7 +420,7 @@
     var action = actionFor(e.key);
     if (!action) return;
     e.preventDefault();
-    if (action === 'play_pause' && e.repeat) return;
+    if ((action === 'play_pause' || action === 'loop') && e.repeat) return;
     ACTIONS[action]();
   });
 

@@ -60,4 +60,4 @@ so the OHD mp3 player and its timestampMP3() timestamp buttons apply {%- endcomm
 </div>
   </article>
 </div>
-<script id="editor-rows" type="application/json">{"lines": {{ items | map: "csv_line" | jsonify }}, "flags": {{ items | map: "editor_flags" | jsonify }}}</script>
+<script id="editor-rows" type="application/json">{"lines": {{ items | map: "csv_line" | jsonify }}, "stamps": {{ items | map: "timestamp" | jsonify }}, "flags": {{ items | map: "editor_flags" | jsonify }}}</script>

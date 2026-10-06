@@ -11,6 +11,9 @@
   #editor-tools .btn { transition: background-color .4s ease, border-color .4s ease, color .4s ease; }
   #editor-tools .btn.editor-flash { background: #FEF44E; border-color: #000; color: #000; transition: none; }
   #editor-rate { min-width: 3.6em; font-variant-numeric: tabular-nums; }
+  /* loop button stays highlighted while a loop is running */
+  #editor-tools #editor-loop.editor-active { background: #FEF44E; border-color: #000; color: #000; font-weight: 600; }
+  .media-scroll-wrapper #editor-tools .editor-loop-word { display: none; }
   /* the speed as a percentage, shown briefly after each change, then collapsing */
   .editor-rate-pop { display: inline-block; max-width: 0; overflow: hidden; white-space: nowrap; vertical-align: middle;
     padding: 0; border-radius: .25rem; background: #FEF44E; color: #000; font-weight: 600; font-variant-numeric: tabular-nums;
