@@ -1,0 +1,25 @@
+---
+# Minimal page shell for the editing workspace.
+# Uses the OHD head and foot includes so Bootstrap, fonts, theme CSS and
+# custom-foot scripts load exactly as they do on an OHD item page.
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% include head/head.html %}
+{% include editor/editor-style.html %}
+</head>
+<body>
+<a class="visually-hidden-focusable" href="#editor-main">Skip to transcript</a>
+<header class="editor-header border-bottom">
+  <div class="container-xxl py-2 d-flex flex-wrap align-items-baseline gap-2">
+    <span class="fw-bold">Transcript editing workspace</span>
+    {% if page.source_csv %}<span class="text-muted small">editing <code>{{ page.source_csv }}</code></span>{% endif %}
+  </div>
+</header>
+<main id="editor-main" class="container-xxl pb-5">
+{{ content }}
+</main>
+{% include foot.html %}
+</body>
+</html>

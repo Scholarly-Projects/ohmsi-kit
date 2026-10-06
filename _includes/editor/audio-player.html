@@ -1,0 +1,29 @@
+<!-- editor: _includes/editor/audio-player.html -->
+{% if page.audio %}
+<div id="editor-player" class="editor-player" role="region" aria-label="Recording">
+  <audio id="editor-audio" controls preload="metadata">
+    <source src="{{ page.audio.url | relative_url }}" type="{{ page.audio.type }}">
+    This browser can't play {{ page.audio.name }}. Try opening the workspace in another browser,
+    or convert the recording to MP3.
+  </audio>
+  <div class="editor-controls d-flex flex-wrap align-items-center gap-2 small mt-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-skip="-5" title="Back 5 seconds">&minus;5s</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-skip="5" title="Forward 5 seconds">+5s</button>
+    <label class="d-flex align-items-center gap-1 mb-0">Speed
+      <select id="editor-rate" class="form-select form-select-sm w-auto">
+        <option value="0.5">0.5&times;</option>
+        <option value="0.75">0.75&times;</option>
+        <option value="1" selected>1&times;</option>
+        <option value="1.25">1.25&times;</option>
+        <option value="1.5">1.5&times;</option>
+        <option value="2">2&times;</option>
+      </select>
+    </label>
+    <div class="form-check form-switch mb-0">
+      <input class="form-check-input" type="checkbox" id="editor-follow" checked>
+      <label class="form-check-label" for="editor-follow">Follow playback</label>
+    </div>
+    <span class="text-muted ms-md-auto">Space play/pause &middot; &larr;/&rarr; 5s &middot; click a timestamp to jump</span>
+  </div>
+</div>
+{% endif %}

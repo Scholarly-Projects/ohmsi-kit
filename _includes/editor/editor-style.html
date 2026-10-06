@@ -1,0 +1,21 @@
+<!-- editor: _includes/editor/editor-style.html -->
+<style>
+  .editor-header { background: #f8f9fa; }
+  .editor-player {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    background: #fff;
+    padding: .75rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, .12);
+  }
+  .editor-player audio { width: 100%; }
+  #contents-container .line { scroll-margin-top: 9rem; border-left: 4px solid transparent; }
+  #contents-container .line.editor-current { background: rgba(255, 193, 7, .16); border-left-color: #ffc107; }
+  #contents-container .line.editor-flagged { border-left-color: #dc3545; }
+  #contents-container .line.editor-flagged.editor-current { border-left-color: #ffc107; }
+  #contents-container .line:target { background: rgba(13, 110, 253, .08); }
+  .csv-line { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .75rem; color: #6c757d; }
+  .editor-flag { font-weight: normal; white-space: normal; text-align: left; }
+  .editor-flag-list summary { cursor: pointer; }
+</style>

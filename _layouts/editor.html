@@ -1,0 +1,43 @@
+---
+# Editing workspace item page.
+# Adapted from the OHD _layouts/transcript.html: same transcript data and topic
+# visualization, with a local audio player in place of the YouTube/Vimeo/
+# SoundCloud/archive.org embeds, and no metadata, compound-object or print parts.
+layout: editor-base
+custom-foot: transcript/js/transcript-js.html;editor/editor-js.html
+---
+{%- comment -%} rows loaded from the CSV in C/ by _plugins/editor_workspace.rb {%- endcomment -%}
+{%- assign items = site.data.transcripts[page.objectid] -%}
+{%- if page.audio -%}{%- assign av = "local" -%}{%- endif -%}
+
+{%- comment -%} if using color-coded visualization find all words used in the tags column {%- endcomment -%}
+{% if site.data.filters and page.has_tags %}
+{% include transcript/style/filter-style.html %}
+{%- assign min-count = 1 -%}
+{%- assign raw-subjects = items | map: "tags" | compact | join: ";" | split: ";" -%}
+{%- capture subjects -%}{% for s in raw-subjects %}{% if s != "" %}{{- s | strip | downcase -}};{% endif %}{%- endfor
+-%}{%-
+endcapture -%}
+{%- assign subjects = subjects | split: ";" -%}
+{%- assign uniqueSubjects = subjects | uniq | sort -%}
+{% endif %}
+
+{% include editor/audio-player.html %}
+{% include editor/status-panel.html %}
+
+{% if items.size > 0 %}
+<div id="scrolly">
+  <article>
+    <div class="step my-3" id="step0">
+      <div id="upper-content">
+        {% if site.data.filters and uniqueSubjects.size > 0 %}
+        {% include transcript/item/transcript-viz.html %}
+        {% endif %}
+      </div>
+    </div>
+    <div class="step my-3" id="step1">
+      {% include editor/transcript-lines.html %}
+    </div>
+  </article>
+</div>
+{% endif %}

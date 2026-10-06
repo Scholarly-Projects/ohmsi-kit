@@ -1,0 +1,112 @@
+<!-- editor: _includes/editor/editor-js.html -->
+<script>
+(function () {
+  var audio = document.getElementById('editor-audio');
+  var fileKey = 'ohd-editor:' + {{ page.source_csv | default: "none" | jsonify }};
+
+  function save(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
+  function load(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+
+  // timestamp buttons call this (see editor/transcript-lines.html)
+  window.seekLocal = function (sec) {
+    if (!audio) return;
+    audio.currentTime = sec;
+    audio.play();
+  };
+
+  if (!audio) return;
+
+  // --- pick up where playback was before the last save reloaded the page
+  var savedTime = parseFloat(load(fileKey + ':time'));
+  function restoreTime() {
+    if (!isNaN(savedTime) && savedTime > 0 && (!audio.duration || savedTime < audio.duration)) {
+      audio.currentTime = savedTime;
+    }
+  }
+  if (audio.readyState >= 1) { restoreTime(); }
+  else { audio.addEventListener('loadedmetadata', restoreTime, { once: true }); }
+
+  // --- playback speed
+  var rate = document.getElementById('editor-rate');
+  var savedRate = load('ohd-editor:rate');
+  if (savedRate) { rate.value = savedRate; audio.playbackRate = parseFloat(savedRate) || 1; }
+  rate.addEventListener('change', function () {
+    audio.playbackRate = parseFloat(rate.value) || 1;
+    save('ohd-editor:rate', rate.value);
+  });
+  // some browsers reset the rate when a new source loads
+  audio.addEventListener('play', function () { audio.playbackRate = parseFloat(rate.value) || 1; });
+
+  // --- skip buttons
+  document.querySelectorAll('[data-skip]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      audio.currentTime = Math.max(0, audio.currentTime + parseFloat(btn.getAttribute('data-skip')));
+    });
+  });
+
+  // --- follow playback: highlight the line being spoken
+  var follow = document.getElementById('editor-follow');
+  var savedFollow = load('ohd-editor:follow');
+  if (savedFollow !== null) { follow.checked = savedFollow === 'true'; }
+  follow.addEventListener('change', function () { save('ohd-editor:follow', String(follow.checked)); });
+
+  var lines = Array.prototype.slice.call(document.querySelectorAll('#contents-container .line'));
+  var starts = lines.map(function (line) {
+    var btn = line.querySelector('[data-timestamp]');
+    return btn ? parseFloat(btn.getAttribute('data-timestamp')) : NaN;
+  });
+  var player = document.getElementById('editor-player');
+  var current = -1;
+  var lastSaved = 0;
+
+  // the line with the latest start time that has already passed
+  // (robust to an out-of-order timestamp elsewhere in the file)
+  function lineAt(t) {
+    var found = -1;
+    var best = -Infinity;
+    for (var i = 0; i < starts.length; i++) {
+      if (!isNaN(starts[i]) && starts[i] <= t + 0.25 && starts[i] >= best) { best = starts[i]; found = i; }
+    }
+    return found;
+  }
+
+  function inView(el) {
+    var r = el.getBoundingClientRect();
+    var top = player ? player.getBoundingClientRect().bottom : 0;
+    return r.top >= top && r.bottom <= window.innerHeight;
+  }
+
+  audio.addEventListener('timeupdate', function () {
+    var t = audio.currentTime;
+    if (Math.abs(t - lastSaved) >= 1) { save(fileKey + ':time', String(t)); lastSaved = t; }
+
+    var i = lineAt(t);
+    if (i === current) return;
+    if (current >= 0 && lines[current]) lines[current].classList.remove('editor-current');
+    current = i;
+    if (i < 0) return;
+    lines[i].classList.add('editor-current');
+    if (follow.checked && !audio.paused && !inView(lines[i])) {
+      lines[i].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  });
+
+  // --- keyboard: Space play/pause, left/right arrows 5 seconds
+  document.addEventListener('keydown', function (e) {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    var el = document.activeElement;
+    var tag = el ? el.tagName : '';
+    if (/^(INPUT|SELECT|TEXTAREA|BUTTON|AUDIO|A)$/.test(tag) || (el && el.isContentEditable)) return;
+    if (e.key === ' ') {
+      e.preventDefault();
+      if (audio.paused) { audio.play(); } else { audio.pause(); }
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      audio.currentTime = Math.max(0, audio.currentTime - 5);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      audio.currentTime = audio.currentTime + 5;
+    }
+  });
+})();
+</script>
