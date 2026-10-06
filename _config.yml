@@ -32,10 +32,10 @@ editor:
   generated_dir: _data/B
   # if a recording exists in several formats, use the first one found in this order
   audio_preference: [mp3, m4a, wav, flac]
-  # Make a small constant-bitrate MP3 copy of the recording for playback, using ffmpeg.
-  # It plays and seeks reliably in every browser, which large WAV/FLAC files may not.
-  #   auto   - for WAV and FLAC recordings (default)
-  #   always - for every recording
+  # Make a constant-bitrate MP3 copy of the recording for playback, using ffmpeg.
+  # The OHD player is an MP3 player, and the copy seeks reliably in every browser.
+  #   auto   - for WAV, FLAC and M4A recordings (default)
+  #   always - for every recording, including MP3s
   #   never  - play the original file
   # The copy is made once per recording and kept in .jekyll-cache/editor-audio/.
   playback_copy: auto

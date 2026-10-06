@@ -89,9 +89,16 @@ module EditorWorkspace
       data = {
         'layout' => 'editor',
         'title' => 'Editing workspace',
+        # same value an OHD metadata row gives a transcript item
+        'display_template' => 'transcript',
         'built_at' => Time.now.strftime('%-I:%M:%S %p'),
         'has_scroll_to_top' => File.exist?(File.join(site.source, site.config['includes_dir'] || '_includes', 'scroll-to-top.html'))
       }
+
+      unless File.exist?(File.join(site.source, 'assets', 'lib', 'cb-icons.svg'))
+        @notices << 'assets/lib/cb-icons.svg is missing, so the back-to-top button and other icons are blank. ' \
+                    'Copy it from the OHD project.'
+      end
 
       csv_path = pick_transcript(site, dirs['transcript'])
       if csv_path
@@ -113,6 +120,8 @@ module EditorWorkspace
           'columns' => columns || [],
           'audio' => find_audio(site, dirs['audio'], basename, preference, copy_mode)
         )
+        # the OHD player (transcript/player/mp3.html) reads the recording from object_location
+        data['object_location'] = data['audio']['url'] if data['audio']
       end
 
       data['editor_notices'] = @notices
@@ -266,17 +275,16 @@ module EditorWorkspace
       }
     end
 
-    # Playback copy formats, in order of preference. Constant-bitrate MP3 decodes in
-    # every browser and seeks accurately; AAC is the fallback if ffmpeg has no MP3 encoder.
+    # Playback copy: constant-bitrate MP3, which decodes in every browser and seeks accurately.
     ENCODINGS = [
-      ['mp3', %w[-c:a libmp3lame -b:a 128k]],
-      ['m4a', %w[-c:a aac -b:a 128k -movflags +faststart]]
+      ['mp3', %w[-c:a libmp3lame -b:a 128k]]
     ].freeze
 
     # Returns the path of a cached playback copy of the recording, or nil to play the original.
     def playback_copy(site, source, basename, ext, mode)
       return nil if mode == 'never'
-      return nil if mode == 'auto' && !%w[wav flac].include?(ext)
+      # the OHD player is an MP3 player, so by default every other format gets an MP3 copy
+      return nil if mode == 'auto' && ext == 'mp3'
 
       ffmpeg = which('ffmpeg')
       unless ffmpeg

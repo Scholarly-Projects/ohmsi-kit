@@ -1,16 +1,13 @@
-<!-- editor: _includes/editor/editor-js.html -->
+<!-- editor: _includes/editor/editor-js.html
+     Editor-only behavior layered on the OHD page. Timestamp buttons use OHD's own
+     timestampMP3() from transcript/player/mp3.html. -->
 <script>
 (function () {
-  var audio = document.getElementById('editor-audio');
+  var audio = document.getElementById('audio-player');
   var fileKey = 'ohd-editor:' + {{ page.source_csv | default: "none" | jsonify }};
 
   function save(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
   function load(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
-  function clock(sec) {
-    sec = Math.max(0, Math.floor(sec || 0));
-    var h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
-    return h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
-  }
 
   // ---------------------------------------------------------------------------
   // CSV line numbers and flags, added under OHD's own transcript markup
@@ -43,76 +40,41 @@
   });
 
   // ---------------------------------------------------------------------------
-  // Reset filters (calls the OHD transcript-js functions)
+  // Reset filters fallback: shown only if the OHD filter bar has no reset button
   // ---------------------------------------------------------------------------
   var reset = document.getElementById('editor-reset');
   if (reset) {
-    reset.addEventListener('click', function () {
-      if (typeof vizFilter === 'function') { vizFilter('all'); }
-      else if (typeof resetVals === 'function') { resetVals(); }
-    });
+    var ohdReset = Array.prototype.some.call(
+      document.querySelectorAll('[onclick*="resetVals"], [onclick*="vizFilter(\'all\')"]'),
+      function (el) { return el !== reset && !el.closest('#editor-tools'); }
+    );
+    if (!ohdReset) {
+      reset.classList.remove('d-none');
+      reset.addEventListener('click', function () {
+        if (typeof vizFilter === 'function') { vizFilter('all'); }
+        else if (typeof resetVals === 'function') { resetVals(); }
+      });
+    }
   }
-
-  // OHD's "mp3" timestamp buttons call timestampMP3(seconds)
-  window.seekLocal = function (sec) {
-    if (!audio) return;
-    sec = parseFloat(sec);
-    if (isNaN(sec)) return;
-    audio.currentTime = sec;
-    var p = audio.play();
-    if (p && p.catch) { p.catch(function (err) { log('play() refused: ' + err.name); }); }
-  };
-  window.timestampMP3 = window.seekLocal;
 
   if (!audio) return;
-
-  // ---------------------------------------------------------------------------
-  // Playback log (kept across reloads for this browser tab)
-  // ---------------------------------------------------------------------------
-  var logBox = document.getElementById('editor-log');
-  var logKey = fileKey + ':log';
-  var entries = [];
-  try { entries = JSON.parse(sessionStorage.getItem(logKey)) || []; } catch (e) {}
-  function render() { if (logBox) logBox.textContent = entries.join('\n'); }
-  function log(msg) {
-    var now = new Date();
-    entries.push(now.toLocaleTimeString() + '  [' + clock(audio.currentTime) + ']  ' + msg);
-    entries = entries.slice(-60);
-    try { sessionStorage.setItem(logKey, JSON.stringify(entries)); } catch (e) {}
-    render();
-  }
-  render();
-  var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
-  log('page ' + (nav && nav.type === 'reload' ? 'reloaded (rebuild or refresh)' : 'loaded') +
-      ' · ' + {{ page.audio.url | jsonify }} + ' (' + {{ page.audio.type | jsonify }} + ')');
-
-  ['play', 'pause', 'seeking', 'seeked', 'waiting', 'stalled', 'ended', 'emptied', 'abort'].forEach(function (ev) {
-    audio.addEventListener(ev, function () { log(ev); });
-  });
-  audio.addEventListener('loadedmetadata', function () {
-    log('loadedmetadata · duration ' + clock(audio.duration) +
-        ' · seekable ' + (audio.seekable.length ? clock(audio.seekable.end(0)) : 'none'));
-  });
-  audio.addEventListener('error', function () {
-    var err = audio.error || (audio.querySelector('source') && 'source failed');
-    log('ERROR ' + (err && err.code ? 'code ' + err.code + ' ' + (err.message || '') : err));
-    var box = document.getElementById('editor-log-box');
-    if (box) box.open = true;
-  }, true);
 
   // ---------------------------------------------------------------------------
   // Pick up where playback was before a save reloaded the page
   // ---------------------------------------------------------------------------
   var savedTime = parseFloat(load(fileKey + ':time'));
-  var resume = sessionStorage.getItem(fileKey + ':playing') === 'true';
-  try { sessionStorage.removeItem(fileKey + ':playing'); } catch (e) {}
+  var resume = false;
+  try {
+    resume = sessionStorage.getItem(fileKey + ':playing') === 'true';
+    sessionStorage.removeItem(fileKey + ':playing');
+  } catch (e) {}
   function restore() {
     if (!isNaN(savedTime) && savedTime > 0 && (!audio.duration || savedTime < audio.duration)) {
       audio.currentTime = savedTime;
     }
     if (resume) {
       var p = audio.play();
-      if (p && p.catch) { p.catch(function () { log('resume after reload blocked by the browser; press play'); }); }
+      if (p && p.catch) { p.catch(function () {}); } // the browser may require a click first
     }
   }
   if (audio.readyState >= 1) { restore(); }
@@ -126,16 +88,18 @@
   // Speed and skip buttons
   // ---------------------------------------------------------------------------
   var rate = document.getElementById('editor-rate');
-  var savedRate = load('ohd-editor:rate');
-  if (savedRate) { rate.value = savedRate; }
-  audio.playbackRate = parseFloat(rate.value) || 1;
-  rate.addEventListener('change', function () {
+  if (rate) {
+    var savedRate = load('ohd-editor:rate');
+    if (savedRate) { rate.value = savedRate; }
     audio.playbackRate = parseFloat(rate.value) || 1;
-    save('ohd-editor:rate', rate.value);
-  });
-  audio.addEventListener('loadedmetadata', function () { audio.playbackRate = parseFloat(rate.value) || 1; });
+    rate.addEventListener('change', function () {
+      audio.playbackRate = parseFloat(rate.value) || 1;
+      save('ohd-editor:rate', rate.value);
+    });
+    audio.addEventListener('loadedmetadata', function () { audio.playbackRate = parseFloat(rate.value) || 1; });
+  }
 
-  document.querySelectorAll('[data-skip]').forEach(function (btn) {
+  document.querySelectorAll('#editor-tools [data-skip]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       audio.currentTime = Math.max(0, audio.currentTime + parseFloat(btn.getAttribute('data-skip')));
     });
@@ -145,9 +109,11 @@
   // Follow playback: highlight (and keep in view) the line being spoken
   // ---------------------------------------------------------------------------
   var follow = document.getElementById('editor-follow');
-  var savedFollow = load('ohd-editor:follow');
-  if (savedFollow !== null) { follow.checked = savedFollow === 'true'; }
-  follow.addEventListener('change', function () { save('ohd-editor:follow', String(follow.checked)); });
+  if (follow) {
+    var savedFollow = load('ohd-editor:follow');
+    if (savedFollow !== null) { follow.checked = savedFollow === 'true'; }
+    follow.addEventListener('change', function () { save('ohd-editor:follow', String(follow.checked)); });
+  }
 
   var starts = lines.map(function (line) {
     var btn = line.querySelector('[data-timestamp]');
@@ -179,7 +145,7 @@
     current = i;
     if (i < 0) return;
     lines[i].classList.add('editor-current');
-    if (follow.checked && !audio.paused && !inView(lines[i])) {
+    if (follow && follow.checked && !audio.paused && !inView(lines[i])) {
       lines[i].scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
   });

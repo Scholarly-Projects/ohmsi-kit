@@ -1,9 +1,10 @@
 ---
 # Editing workspace item page.
-# Mirrors the OHD _layouts/transcript.html structure and uses the OHD transcript,
-# visualization, filter, scrollama and transcript-js includes unmodified, so the
-# transcript looks and behaves as it will on the live site. The only differences:
-#   - the AV area holds the local recording plus editor controls (editor/av-local.html)
+# Mirrors OHD _layouts/transcript.html and uses the OHD includes unmodified, so the
+# transcript looks and behaves as it will on the live site: the player
+# (transcript/item/av.html), the scrolling mini player (media-scroll-wrapper),
+# topic bar, filters and search, and the transcript lines. Differences:
+#   - editor/player-tools.html adds skip, speed, follow and reset under the player
 #   - the metadata area shows workspace status (editor/status-panel.html), since a
 #     transcript in _data/C/ has no collection metadata row yet
 #   - editor/editor-js.html adds CSV line numbers, flags and playback follow
@@ -12,6 +13,10 @@ custom-foot: transcript/js/transcript-js.html;transcript/js/scrollama-js.html;ed
 ---
 {%- comment -%} rows loaded from the CSV in _data/C/ by _plugins/editor_workspace.rb {%- endcomment -%}
 {% assign items = site.data.transcripts[page.objectid] %}
+{%- comment -%} OHD's transcript/item/filters.html only renders (Transcript heading, topic
+filter, search, Reset Filters) when `trancheck` holds more than one transcript line;
+on the live site that variable is set outside the transcript layout {%- endcomment -%}
+{% assign trancheck = items %}
 
 {%- comment -%} if using color-coded visualization find all words used in the subject metadata {%- endcomment -%}
 {% if site.data.filters %}
@@ -25,9 +30,9 @@ endcapture -%}
 {%- assign uniqueSubjects = subjects | uniq | sort -%}
 {% endif %}
 
-{%- comment -%} OHD renders "mp3" timestamps as timestampMP3() buttons; the editor player
-answers them for every local format (mp3, m4a, wav, flac) {%- endcomment -%}
-{% if page.audio %}{% assign av = "mp3" %}{% endif %}
+{%- comment -%} the plugin always publishes an MP3 (the original, or a playback copy),
+so the OHD mp3 player and its timestampMP3() timestamp buttons apply {%- endcomment -%}
+{% if page.object_location %}{% assign av = "mp3" %}{% endif %}
 
 <div id="scrolly">
   <article>
@@ -37,7 +42,10 @@ answers them for every local format (mp3, m4a, wav, flac) {%- endcomment -%}
         {% if site.data.theme.media-scroll == true %}
         {% include transcript/style/media-scroll-wrapper.html %}
         {% endif %}
-        {% include editor/av-local.html %}
+        {% if av %}
+        {% include transcript/item/av.html %}
+        {% include editor/player-tools.html %}
+        {% endif %}
         <div id="transcript-metadata" class="no-print">
           {% include editor/status-panel.html %}
         </div>

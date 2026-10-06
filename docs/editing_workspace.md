@@ -39,7 +39,7 @@ The first time a WAV or FLAC recording is opened, the build pauses while ffmpeg 
 
 The page uses the OHD transcript includes unchanged: the topic bar with its hover tooltips, the topic filter and search, the sticky filter tab, scrollama, and the transcript lines. A transcript should look the same here as on the live site. Two areas differ:
 
-- **Player area** (where OHD shows the AV embed): the local recording, plus editor-only controls.
+- **Player**: OHD's own MP3 player (`transcript/item/av.html`), playing the recording from `_data/A/`, with editor-only controls underneath. When you scroll into the transcript it shrinks to the mini player at the lower right, as on the live site (needs `media-scroll: true` in `_data/theme.yml`).
 - **Metadata area**: workspace status instead of collection metadata, since a transcript in `_data/C/` has no metadata row yet.
 
 ### Editor-only additions
@@ -51,10 +51,9 @@ The page uses the OHD transcript includes unchanged: the topic bar with its hove
 | Back / forward 5 seconds | `←` / `→`, or the −5s / +5s buttons |
 | Playback speed | Speed menu (remembered) |
 | Highlight the line being spoken | "Follow playback" switch |
-| Clear a topic filter | "Reset filters" button |
 | Find a line in the CSV | The grey **L** number under each timestamp is its line number in the CSV; in VS Code press `Ctrl+G` and type it |
 
-These are marked `no-print` and don't appear in printouts.
+These are marked `no-print`, don't appear in printouts, and are hidden in the scrolling mini player. Filtering, search and Reset Filters come from the OHD filter bar above the transcript.
 
 ### Checks and warnings
 
@@ -69,17 +68,13 @@ On each rebuild the workspace checks the CSV and lists problems in the status ar
 
 Individual lines get a red edge and a note, and are listed under "lines to check", when their timestamp isn't `H:MM:SS`, goes backwards, or the line has no words.
 
-### Playback log
-
-The status area has a collapsed **Playback log** that records what the browser reports: play, pause, seeking, stalls, errors and page reloads. If playback misbehaves, open it and copy its contents when reporting the problem.
-
 ## Playback copy
 
-Browsers can play WAV and FLAC files, but large ones, or ones whose headers were written by a recorder or editor while streaming, don't always seek reliably. Safari is also pickier than Chrome. So for WAV and FLAC recordings, the workspace uses ffmpeg to make a constant-bitrate 128 kbps MP3 copy, which plays and seeks accurately in every browser. A one-hour recording becomes about 55 MB.
+Browsers can play WAV and FLAC files, but large ones, or ones whose headers were written by a recorder or editor while streaming, don't always seek reliably. Safari is also pickier than Chrome. The OHD player is also an MP3 player. So for WAV, FLAC and M4A recordings, the workspace uses ffmpeg to make a constant-bitrate 128 kbps MP3 copy, which plays and seeks accurately in every browser. A one-hour recording becomes about 55 MB.
 
 - Copies are kept in `.jekyll-cache/editor-audio/` and remade only when the recording changes.
 - The original in `_data/A/` is never modified.
-- Setting `editor: playback_copy:` in `_config.yml` controls this: `auto` (WAV/FLAC, the default), `always` (every recording) or `never`.
+- Setting `editor: playback_copy:` in `_config.yml` controls this: `auto` (everything except MP3, the default), `always` (every recording) or `never`.
 - If ffmpeg isn't installed, the original file is played and the status area says so. The toolkit's transcription setup normally installs ffmpeg already; check with `ffmpeg -version`.
 
 ## Setup (once per computer)
@@ -115,8 +110,8 @@ _data/C/*.csv
 |---|---|
 | `_plugins/editor_workspace.rb` | Finds the CSV in `_data/C/` and the recording in `_data/A/`, makes the playback copy, checks the CSV, generates the page, prints the workspace address, and stops Jekyll from reading `_data/A`, `B` and `C` as site data |
 | `_layouts/editor.html` | The workspace page, following OHD `_layouts/transcript.html` |
-| `_layouts/editor-base.html` | Page shell: OHD head and foot, item title, scroll-to-top button |
-| `_includes/editor/` | Player and editor controls, status panel, editor script and styles |
+| `_layouts/editor-base.html` | Page shell following OHD `default.html` and `item/item-page-base.html`: head and foot, item title, scroll-to-top button |
+| `_includes/editor/` | Editor controls under the player, status panel, editor script and styles |
 | `_config.yml` | Folder names, playback copy, live reload, and the exclude list that keeps the Python toolkit out of the build |
 
 Jekyll normally parses every CSV under `_data` on every build. The plugin skips the three toolkit folders, so a large `_data/B` doesn't slow rebuilds. It also means a broken CSV in `_data/C` shows up as a warning on the page instead of stopping the build.
@@ -126,8 +121,11 @@ Jekyll normally parses every CSV under `_data` on every build. The plugin skips 
 ```
 _includes/head/head.html
 _includes/foot.html
-_includes/scroll-to-top.html                  (recommended; see below)
+_includes/scroll-to-top.html
+assets/lib/cb-icons.svg                       (icons for back-to-top and the Transcript button)
 _includes/transcript/                          (the whole folder), in particular:
+    item/av.html
+    player/mp3.html
     item/transcript.html
     item/transcript-viz.html
     item/filters.html
@@ -145,6 +143,6 @@ _data/config-theme-colors.csv
 _data/filters.csv
 ```
 
-OHD's `transcript-js.html` attaches to a `#scroll-to-top` button and stops before setting up tooltips and filters if the button is missing. If `_includes/scroll-to-top.html` isn't copied over, the workspace adds a plain back-to-top button so the scripts still run; copy the OHD file to get the live site's version.
+OHD's `transcript-js.html` attaches to a `#scroll-to-top` button and stops before setting up tooltips and filters if the button is missing. If `_includes/scroll-to-top.html` isn't copied over, the workspace adds a plain back-to-top button so the scripts still run; copy the OHD file to get the live site's version. The button appears once the page is scrolled more than 500 pixels.
 
-Keep `_data/theme.yml`, `_data/filters.csv` and the SCSS in step with the live site so the dry run matches it. With `media-scroll: true` in `theme.yml`, the player moves down the page as you scroll, as on the live site; the keyboard shortcuts work either way.
+Keep `_data/theme.yml`, `_data/filters.csv` and the SCSS in step with the live site so the dry run matches it. The mini player needs `media-scroll: true` and the filter bar `search-and-filters: true` in `theme.yml`; the keyboard shortcuts work either way.

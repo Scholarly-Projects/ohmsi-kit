@@ -1,10 +1,11 @@
-<!-- editor: _includes/editor/status-panel.html (sits where OHD's transcript-metadata.html goes) -->
+<!-- editor: _includes/editor/status-panel.html (sits where OHD's transcript-metadata.html goes;
+     the "meta" class hides it in the scrolling mini player, as OHD does with metadata) -->
 <div class="my-2 row px-3 mt-4 meta">
   <div class="col">
     {% if page.source_csv %}
     <p class="mb-2">
       <b>Transcript:</b> <span class="me-3"><code>{{ page.source_csv }}</code> ({{ page.row_count }} lines)</span><br>
-      <b>Recording:</b> <span class="me-3">{% if page.audio %}<code>{{ page.audio.path }}</code>{% if page.audio.playback_copy %} <span class="text-muted small">(playing a seek-friendly copy)</span>{% endif %}{% else %}not found{% endif %}</span><br>
+      <b>Recording:</b> <span class="me-3">{% if page.audio %}<code>{{ page.audio.path }}</code>{% if page.audio.playback_copy %} <span class="text-muted small">(playing an MP3 copy)</span>{% endif %}{% else %}not found{% endif %}</span><br>
       <b>Last rebuilt:</b> <span class="me-3">{{ page.built_at }}</span>
     </p>
     <p class="small text-muted mb-2">
@@ -30,14 +31,6 @@
         <li><a href="#{{ page.objectid }}{{ item.row_index }}" onclick="scrollToLine('{{ page.objectid }}{{ item.row_index }}'); return false;">CSV line {{ item.csv_line }}</a>: {{ item.editor_flags | escape }}</li>
         {% endfor %}
       </ul>
-    </details>
-    {% endif %}
-
-    {% if page.audio %}
-    <details class="editor-details small mb-2" id="editor-log-box">
-      <summary>Playback log</summary>
-      <p class="text-muted mb-1">If playback stops unexpectedly, this shows what the browser reported. Copy it when reporting a problem.</p>
-      <pre id="editor-log" class="mb-0"></pre>
     </details>
     {% endif %}
   </div>
