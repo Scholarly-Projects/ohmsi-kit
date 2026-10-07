@@ -388,6 +388,13 @@ print('Done.')
 </details>
 
 <details>
+<summary><h2>Acknowledgments</h2></summary>
+
+The transcript editing workspace is built from the [Oral History as Data collections template](https://github.com/uidaholib/oral-history-collections-template) by the CollectionBuilder contributors and University of Idaho Library Digital Initiatives, used under the MIT License with the contributors' permission; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Transcription uses [Whisper](https://github.com/openai/whisper) and diarization uses [SpeechBrain](https://speechbrain.github.io/).
+
+</details>
+
+<details>
 <summary><h2>Background</h2></summary>
 
 This kit was developed over time to facilitate the transcription of the [Latah County Oral History Collection](https://www.lib.uidaho.edu/digital/lcoh/), an initiative conducted in the 1970's by the Latah County Historical Society and later digitized by the University of Idaho's [Center for Digital Inquiry and Learning](https://cdil.lib.uidaho.edu/) (CDIL) in 2015. The author developed this kit to transcribe the over 550 hour collection during the spring and summer of 2026 to make the material more discoverable for researchers and providing the Latah County community with easier access to its history. This kit was developed for implementation in the CDIL's [Oral History as Data](https://github.com/oralhistoryasdata) framework developed by Devin Becker, as well as the author's oral history transcript mining method outlined in [Distant Listening: Using Python and Apps Scripts to Text Mine and Tag Oral History Collections](https://journal.code4lib.org/articles/18286).

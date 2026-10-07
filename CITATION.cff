@@ -1,0 +1,56 @@
+cff-version: 1.2.0
+message: "If you use this toolkit, please cite it as below."
+type: software
+title: "ohmsi-kit: Oral History Multi-Speaker Interpretation-Kit"
+abstract: >-
+  A toolkit that uses Whisper speech-to-text models and SpeechBrain
+  diarization to turn oral history recordings into CSV transcripts of
+  timestamped dialogue separated by speaker, with advanced scripts for
+  difficult audio, and a local workspace for copy editing each transcript
+  against its recording as it will appear on an Oral History as Data site.
+authors:
+  - family-names: Weymouth
+    given-names: Andrew
+repository-code: "https://github.com/Scholarly-Projects/ohmsi-kit"
+license: MIT
+keywords:
+  - oral history
+  - transcription
+  - speaker diarization
+  - Whisper
+  - SpeechBrain
+  - digital humanities
+  - Oral History as Data
+references:
+  - type: software
+    title: "Oral History as Data collections template"
+    authors:
+      - name: "CollectionBuilder contributors"
+      - name: "University of Idaho Library Digital Initiatives"
+    repository-code: "https://github.com/uidaholib/oral-history-collections-template"
+    license: MIT
+  - type: article
+    title: "Robust Speech Recognition via Large-Scale Weak Supervision"
+    authors:
+      - family-names: Radford
+        given-names: Alec
+      - family-names: Kim
+        given-names: Jong Wook
+      - family-names: Xu
+        given-names: Tao
+      - family-names: Brockman
+        given-names: Greg
+      - family-names: McLeavey
+        given-names: Christine
+      - family-names: Sutskever
+        given-names: Ilya
+    year: 2022
+    url: "https://arxiv.org/abs/2212.04356"
+  - type: article
+    title: "SpeechBrain: A General-Purpose Speech Toolkit"
+    authors:
+      - family-names: Ravanelli
+        given-names: Mirco
+      - name: "others"
+    year: 2021
+    url: "https://arxiv.org/abs/2106.04624"
