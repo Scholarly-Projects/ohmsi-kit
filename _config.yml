@@ -107,6 +107,7 @@ exclude:
   - B/
   - D/
   - docs/
+  - images/
   - "*.py"
   - requirements.txt
   - README.md

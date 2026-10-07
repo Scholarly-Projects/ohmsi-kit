@@ -1,5 +1,10 @@
 # ohmsi-kit
 
+<p align="center">
+  <img src="images/ohmsi_logo.png" alt="ohmsi-kit logo of a lighthouse on top of a radio with the sea in the distance." width="400">
+</p>
+
+
 __Oral History Multi-Speaker Interpretation-Kit__
 
 This kit uses Whisper speech-to-text models and SpeechBrain _diarization_ (identifying _who is speaking when_) to turn oral history recordings into CSV transcripts of timestamped dialogue separated by speaker. Recordings are batch processed with a basic script first, with more advanced scripts for difficult audio, such as crosstalk, poor recording conditions or similar-sounding voices. Each transcript can then be copy edited against its recording in a local workspace that previews it as it will appear on an [Oral History as Data](https://github.com/uidaholib/oral-history-collections-template) site. Keyboard shortcuts for playback, looping, speed and navigation streamline the copyediting process, while supplemental Python workflows batch correct repetitive and time consuming errors.
@@ -201,7 +206,7 @@ python script_a.py; python script_b.py; python script_c.py; python script_d.py; 
 <details>
 <summary><h2>Copyediting Workspace (B to C)</h2></summary>
 
-A local dry run of how a transcript will look and behave on an Oral History as Data (OHD) site, used to copy edit the transcript against its recording. The page is built from the OHD item-level transcript layout and runs with Jekyll on your own computer. Nothing is published. It uses the folders described in [Folder Structure](#folder-structure).
+Ohmsi-kit utilizes OHD's item level interface as a copy editing workspace, where you can ergonomically listen to the audio, review transcription model outputs, revise materials and instantly view your changes for accuracy.
 
 ### Opening the workspace
 
