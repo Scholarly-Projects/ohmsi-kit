@@ -2,11 +2,7 @@
 
 __Oral History Multi-Speaker Interpretation-Kit__
 
-A tiered workflow for creating oral history transcriptions that implements various Whisper models for speech-to-text recognition and SpeechBrain for _diarization_, or the process of sorting an audio recording into segments that indicate _who is speaking when_. The kit batch processes collections of recordings into CSV files of timestamped dialogue separated by speaker, then provides a local editing workspace for copy editing each transcript against its recording. Whisper and SpeechBrain are open source, require no login or tokens, and **run locally** once their pre-trained models are downloaded.
-
-The Python scripts are designed to batch process the greatest number of recordings first, then apply more advanced scripts to more difficult recordings. Low audio fidelity, suboptimal recording environments, crosstalk and vocal similarity between speakers can introduce errors into Whisper's pattern recognition, resulting in under-parsed dialogue clusters or dropped punctuation, which the kit's more advanced scripts can help mitigate.
-
-The editing workspace previews each transcript as it will appear on an [Oral History as Data](https://github.com/uidaholib/oral-history-collections-template) site, playing the recording alongside the transcript so it can serve as the reference while you correct the CSV.
+This kit uses Whisper speech-to-text models and SpeechBrain _diarization_ (identifying _who is speaking when_) to turn oral history recordings into CSV transcripts of timestamped dialogue separated by speaker. Recordings are batch processed with a basic script first, with more advanced scripts for difficult audio, such as crosstalk, poor recording conditions or similar-sounding voices. Each transcript can then be copy edited against its recording in a local workspace that previews it as it will appear on an [Oral History as Data](https://github.com/uidaholib/oral-history-collections-template) site. Keyboard shortcuts for playback, looping, speed and navigation streamline the copyediting process, while supplemental Python workflows batch correct repetitive and time consuming errors.
 
 ### Folder Structure
 
