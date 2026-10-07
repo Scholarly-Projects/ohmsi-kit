@@ -311,7 +311,7 @@
   // --- copy the current playback time, in the CSV's timestamp format ---------
   function copyTime() {
     var text = clock(audio.currentTime);
-    function done() { showPop('Copied ' + text, 1600); announce('Copied ' + text); }
+    function done() { showPop(text, 1600); announce('Copied ' + text); }
     function fallback() {
       var ta = document.createElement('textarea');
       ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
