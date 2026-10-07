@@ -216,8 +216,18 @@ _site/
 .jekyll-metadata
 .sass-cache/
 
-# Toolkit working folders: recordings, generated, in-progress and finished transcripts
-A/
-B/
-C/
-D/
+# Toolkit working folders: recordings, generated, in-progress and finished transcripts.
+# Their contents are ignored, but the folders themselves (.gitkeep) and the example
+# files (example_*) are kept. Only files whose names start with example_ can be
+# committed from A, B and C, so your own recordings and transcripts stay out of git.
+/A/*
+!/A/.gitkeep
+!/A/example_*
+/B/*
+!/B/.gitkeep
+!/B/example_*
+/C/*
+!/C/.gitkeep
+!/C/example_*
+/D/*
+!/D/.gitkeep

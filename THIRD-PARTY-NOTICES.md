@@ -1,6 +1,6 @@
 # Third-party notices
 
-The ohmsi-kit code is licensed under the MIT License in [LICENSE](LICENSE). This repository also includes material from the project below, distributed under its own license.
+The ohmsi-kit code is licensed under the MIT License in [LICENSE](LICENSE). This repository also includes the material below, distributed under its own license or rights statement.
 
 ## Oral History as Data collections template
 
@@ -38,6 +38,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Example recording
+
+`A/example_fisher_marie.mp3` is an excerpt (the first 15 minutes) of an interview from the Latah County Oral History Collection, included for instructional purposes. The example transcripts, `B/example_fisher_marie.csv` and `C/example_fisher_marie.csv`, cover the same excerpt.
+
+> "Marie Leitch Fisher Interview #1, 10/29/1975", Latah County Oral History Collection, University of Idaho Library Digital Collections, https://www.lib.uidaho.edu/digital/lcoh/people/fisher_marie_1.html
+
+**Rights:** In Copyright – Educational Use Permitted ([InC-EDU](http://rightsstatements.org/vocab/InC-EDU/1.0/)). This excerpt is not covered by the MIT License. For other uses, contact the University of Idaho Library Special Collections and Archives Department at libspec@uidaho.edu.
 
 ## Libraries installed separately
 
