@@ -161,45 +161,21 @@ python script_a.py; python script_b.py; python script_c.py; python script_d.py; 
 <details>
 <summary><h2>Transcription (A to B)</h2></summary>
 
-* Before processing, organize recordings by how many speakers are supposed to be involved in each interview. Unexpected speakers will be given the designation "Unknown Speaker" in CSV output, but designating a `NUM_SPEAKERS` in the user configuration section at the top of the script will help inform how much variance between speakers will be involved in the recording for greater accuracy.
-  * If speaker diarization is not a priority and/or you are dealing with a large volume of recordings, writing `None` after `NUM_SPEAKERS` will default determination of different speakers to the `distance_threshold`.
-* Move these organized `mp3`, `wav`, `m4a` or `flac` files into the `A` folder of the repository.
-* First, batch process with `script_a`. This is the most basic, accurate script which requires no customization beyond the speaker number designation.
-* Reviewing the output of the processed audio files as CSVs in the B folder, it should be apparent if the recording was processed correctly. Large clusters of dialogue and/or transcripts gradually losing punctuation are indicators that those audio files need more advanced processing.
-* `script_b` is identical to `a`, but utilizes the `medium.en` Whisper model and `script_c` uses `large_v2`. These may result in higher accuracy of word identification and speaker differentiation but they will take longer to process. Also, there is a vulnerability to hallucination in `large_v2` which you will need to look out for, but it is not nearly as pronounced as tests using `large-v3-turbo`, the most current Whisper model.
-* _If these two scripts also yield unsuccessful transcriptions, the following models implement more manual approaches that may be helpful for unique recordings_.
-* `script_d` contains an active `distance_threshold`, which is engaged even if there is a number provided in the `NUM_SPEAKERS`. If you are finding that speakers are incorrectly being merged, lower from the default `.65`. If the same speaker is being identified as multiple speakers, increase from `.65`.
-  * `script_d` also contains an `INTERJECTION` filter that may be helpful with specific interview styles. Some interjections may incorrectly cluster at the end of the previous speaker's dialogue, such as:
+* Before processing, sort your recordings by how many speakers each interview should have. Then move the `mp3`, `wav`, `m4a` or `flac` files into the `A` folder.
+* Set `NUM_SPEAKERS` in the configuration section at the top of the script. Knowing the expected number helps the script judge how much the voices in a recording vary, which makes speaker labels more accurate. Voices beyond that number are labeled "Unknown Speaker."
+  * If speaker labels aren't a priority, or you're processing a large batch, set `NUM_SPEAKERS` to `None`. The `distance_threshold` then decides where one speaker ends and the next begins.
+* Batch process with `script_a` first, then review the CSVs in the `B` folder. Large clusters of dialogue, or a transcript that gradually loses its punctuation, mean that recording needs one of the later scripts.
 
-| speaker | timestamp | words |
-| :---- | ----- | :---- |
-| Speaker 3 | 0:00:00 | If you didn't pay up, well, it would cut you off the line. So her father is a secretary there. He climbed the pole and cut her off and the old lady came out and put you down. |
-| Speaker 2 | 0:00:12 | This was Mrs. McKean? <mark>Yeah.</mark> |
-| Speaker 3 | 0:00:16 | She was a woman that enjoyed getting out of the scrap, you know, just like old Gabriel Anderson or my dad. |
-| Speaker 1 | 0:00:23 | Well, she wouldn't pick anything, but she wouldn't pick anything either. |
-| Speaker 3 | 0:00:27 | Well, Anna Marie writes this article about this to you. I'm a darn fool. Instead of putting her dad in that did do it, she says, Mr. Roan, my dad, he called her a man. |
-| Speaker 1 | 0:00:43 | He and his dad were batching right across the road from him at that time. |
-| Speaker 2 | 0:00:47 | Well, so, but what really happened was Gabriel Anderson went... Her mother is a man. What happened? He climbed up the pole to cut it off? <mark>Yeah.</mark> |
+| Script | How it works | When to use it |
+| :---- | :---- | :---- |
+| `script_a` | The most basic and accurate script. The speaker number is the only setting. | Start here for every batch. |
+| `script_b` | Same as `script_a`, using Whisper's `medium.en` model. | `script_a` mislabeled speakers or misheard words. More accurate in some cases, but slower. |
+| `script_c` | Same as `script_a`, using Whisper's `large-v2` model. | Same as `script_b`, and slower still. Watch for hallucinated text, though it's much less common than with `large-v3-turbo`. |
+| `script_d` | Always applies a `distance_threshold` (default `.65`), even when `NUM_SPEAKERS` is set. Adds an `INTERJECTION` filter. | If separate speakers are being merged, lower the threshold. If one speaker is split into several, raise it. In `INTERJECTION`, list short replies such as "Yeah." that end up at the end of the previous speaker's line. The script moves them to the speaker who said them. |
+| `script_e` | Combines speaker identification with rules that find the interviewer by the questions they ask. `PAUSE_THRESHOLD` forces breaks in dialogue. | A backup for formal interviews with a clear question-and-answer pattern. The interviewer label comes from rules rather than the models, so expect some corrections during copy editing. |
+| `script_f` | Doesn't label speakers. Splits speech into blocks wherever a pause is longer than `PAUSE_THRESHOLD`. | A last resort for badly compromised audio, or when you only need an accurate transcript with no speakers. |
 
-- _The `INTERJECTION` function in the configuration of `script_d` allows you to build a custom vocabulary based on these speaking styles, remove them from the ends of dialogue and attach them to the correct speaker, such as:_
-
-| speaker | timestamp | words |
-| :---- | ----- | :---- |
-| Speaker 1 | 0:00:00 | If you didn't pay up, they'll cut you off the line. So her father is a second-year in there. He climbed the pole to cut her off, and the old lady came out of the butcher knife. |
-| Speaker 3 | 0:00:13 | This was Mrs. McKean? |
-| Speaker 1 | 0:00:14 | <mark>Yeah.</mark> She was a woman that enjoyed getting into the scrap, you know, just like old Gabriel Anderson or my dad. |
-| Speaker 2 | 0:00:23 | Well, she wouldn't take anything, but she wouldn't take anything either. |
-| Speaker 1 | 0:00:27 | Well, Anna Marie writes this article about this deal, and the darn fool, instead of putting her dad in that did do it, she says, Mr. Roan, my dad. |
-| Speaker 2 | 0:00:40 | They laid right across the road. He and his dad were batching right across the road from him at that time. |
-| Speaker 3 | 0:00:47 | Well, so, but what really happened was Gabriel Anderson went... |
-| Speaker 1 | 0:00:51 | Her mother is a man. |
-| Speaker 3 | 0:00:52 | What happened? He climbed up the pole to cut it off? |
-| Speaker 1 | 0:00:54 | <mark>Yeah.</mark> And she came out with a butcher knife. |
-
-* `script_e` adds another level of manual control. Whisper biometrics for identifying and labeling speakers is supplemented with heuristic rules for finding the interviewer by identifying questions being posed throughout the interview. Additionally, you can force breaks in dialogue manually by adjusting the `PAUSE_THRESHOLD` number in the configuration. This can be a helpful backup script in circumstances where interviewer and interviewee language is more formal.
-    * That said, this interviewer designation is programmatic rather than relying on the nuance of the Whisper and SpeechBrain models and may result in needing to correct certain elements of the transcript in future copy editing processes.
-* `script_f` is a last resort to salvage extremely compromised audio. Instead of attempting to identify and label speakers, the script separates clusters of speech by a `PAUSE_THRESHOLD` that can be adjusted in the configuration section of the script.
-    * This CSV output is ideal if you simply need to have accurate transcription of the audio with no speaker diarization. For greater accuracy, run the audio through Adobe Premiere's transcription model, [using my workshop](https://aweymo-ui.github.io/premiere_transcripts/) for reference. The Premiere transcription will likely have improved diarization but inferior translation than this script. Using the Premiere transcript as a base, update with Whisper's more accurate translation to salvage and synthesize results.
+For `script_f` recordings that still need speaker labels, run the audio through Adobe Premiere's transcription model, [using my workshop](https://aweymo-ui.github.io/premiere_transcripts/) and noting the [Remediating with Premiere](docs/remediate_premiere.md) file for reference. The Premiere transcription will likely have improved diarization but inferior translation than the script. Using the Premiere transcript as a base, update with Whisper's more accurate translation to salvage and synthesize results.
 
 </details>
 
@@ -295,7 +271,7 @@ Individual lines get a red edge and a note, and are listed under "lines to check
 
 - **said.py**: Fixes a weakness in script_e where an interviewee is mis-identified as the interviewer is posing questions. This frequently comes up if a speaker is prone to recounting things like "... and then she said, why did you do that?". On running the script, these phrases are identified and the speaker column is replaced with `interviewee`, which you can find and replace with that interviewee's name after running the script.
 
-- **cluster.py**: Consolidates rows of dialogue that are labeled as the same speaker into a maximum of four sentences for material that is over-parsed.
+- **cluster.py**: For over-parsed transcripts, the script merges consecutive rows from the same speaker into blocks of about 800 characters (roughly two paragraphs), joining sentence fragments with an ellipsis.
 
 ### Running these scripts
 
