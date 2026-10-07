@@ -163,7 +163,7 @@ python script_a.py; python script_b.py; python script_c.py; python script_d.py; 
 
 * Before processing, sort your recordings by how many speakers each interview should have. Then move the `mp3`, `wav`, `m4a` or `flac` files into the `A` folder.
 * Set `NUM_SPEAKERS` in the configuration section at the top of the script. Knowing the expected number helps the script judge how much the voices in a recording vary, which makes speaker labels more accurate. Voices beyond that number are labeled "Unknown Speaker."
-  * If speaker labels aren't a priority, or you're processing a large batch, set `NUM_SPEAKERS` to `None`. The `distance_threshold` then decides where one speaker ends and the next begins.
+  * If speaker labels aren't a priority, set `NUM_SPEAKERS` to `None`. The `distance_threshold` then decides where one speaker ends and the next begins.
 * Batch process with `script_a` first, then review the CSVs in the `B` folder. Large clusters of dialogue, or a transcript that gradually loses its punctuation, mean that recording needs one of the later scripts.
 
 | Script | How it works | When to use it |
@@ -171,7 +171,7 @@ python script_a.py; python script_b.py; python script_c.py; python script_d.py; 
 | `script_a` | The most basic and accurate script. The speaker number is the only setting. | Start here for every batch. |
 | `script_b` | Same as `script_a`, using Whisper's `medium.en` model. | `script_a` mislabeled speakers or misheard words. More accurate in some cases, but slower. |
 | `script_c` | Same as `script_a`, using Whisper's `large-v2` model. | Same as `script_b`, and slower still. Watch for hallucinated text, though it's much less common than with `large-v3-turbo`. |
-| `script_d` | Always applies a `distance_threshold` (default `.65`), even when `NUM_SPEAKERS` is set. Adds an `INTERJECTION` filter. | If separate speakers are being merged, lower the threshold. If one speaker is split into several, raise it. In `INTERJECTION`, list short replies such as "Yeah." that end up at the end of the previous speaker's line. The script moves them to the speaker who said them. |
+| `script_d` | Always applies a `distance_threshold` (default `.65`), even when `NUM_SPEAKERS` is set. Adds an `INTERJECTION` filter. | The interjection feature fixes a common misattribution: when a short response like "yeah," "okay," or "mhm" lands at the end of one speaker's segment, it is stripped off and moved to the start of the next line. That way it's credited to the person who was most likely replying, and a segment made up only of an interjection is folded into the next line instead of standing alone. |
 | `script_e` | Combines speaker identification with rules that find the interviewer by the questions they ask. `PAUSE_THRESHOLD` forces breaks in dialogue. | A backup for formal interviews with a clear question-and-answer pattern. The interviewer label comes from rules rather than the models, so expect some corrections during copy editing. |
 | `script_f` | Doesn't label speakers. Splits speech into blocks wherever a pause is longer than `PAUSE_THRESHOLD`. | A last resort for badly compromised audio, or when you only need an accurate transcript with no speakers. |
 
@@ -207,10 +207,10 @@ The first time a WAV, FLAC or M4A recording is opened, the build pauses while ff
 
 ### What's on the page
 
-The page header takes its title and description from `title` and `description` in `_config.yml`. Below it, the page uses the OHD transcript includes unchanged: the topic bar with its hover tooltips, the topic filter and search, the sticky filter tab, scrollama, and the transcript lines. A transcript should look the same here as on the live site. Two areas differ:
+The page header takes its title and description from `title` and `description` in `_config.yml`. Below it, the page uses the OHD transcript includes unchanged: the topic bar with its hover tooltips, the topic filter and search, the sticky filter tab, scrollama, and the transcript lines. A transcript should look the same here as on the live site.
 
-- **Player**: OHD's own MP3 player (`transcript/item/av.html`), playing the recording from `A/`, with editor-only controls underneath. When you scroll into the transcript it shrinks to the mini player at the lower right, as on the live site (needs `media-scroll: true` in `_local-build/_data/theme.yml`).
-- **Metadata area**: workspace status instead of collection metadata, since a transcript in `C/` has no metadata row yet.
+- **Player**: OHD's own MP3 player (`transcript/item/av.html`), playing the recording from `A/`, with editor-only controls underneath. When you scroll into the transcript it shrinks to the mini player at the lower right, as on the live site.
+- **Tagging Visualization**: The interface also include's OHD's tagging visualization, if the `tags` and (optionally) `terms` fields are included in the transcription CSV. That said, **these elements are not necessary to use the editing workspace**. To learn more about how to build tags and terms organically through developing a semantic list throughout the transcription and copy editing process, refer to [Copy Editing Strategies](docs/copy_editing.md). To use the author's text mining approach for creating dialogue level metadata, refer to the [Transcript Mining Base repository](https://github.com/Scholarly-Projects/transcript_mining_base) and [_Distant Listening_](https://journal.code4lib.org/articles/18286), published in _Code4Lib_ Spring 2025.
 
 #### Editor-only additions
 
@@ -249,20 +249,20 @@ Each shortcut is set under `editor: keys:` in `_config.yml` at the toolkit root,
 - Use letters and digits as typed (put digits and symbols in quotes: `"0"`, `"]"`), `Space`, or a key name: `ArrowLeft`, `ArrowRight`, `ArrowUp`, `ArrowDown`, `Enter`, `Escape`. Letters work with or without Shift.
 - Set an action to `""` to turn its shortcut off; its button still works.
 - Avoid `Tab` and `Enter`, which move between and activate timestamps and line numbers.
-- The keyboard guides, button labels and tooltips update to match.
+- Update the keyboard guides, button labels and tooltips update to match.
 
 ### Checks and warnings
 
 On each rebuild the workspace checks the CSV and lists problems in the status area (and in the terminal):
 
 - `C/` empty, or holding more than one CSV (it then shows the most recently saved one)
-- no matching recording in `A/`
-- a CSV that can't be parsed, usually an unmatched double quote, with the line where parsing failed
-- a file not saved as UTF-8
-- missing `speaker`, `timestamp` or `words` columns
-- lines with no timestamp
+- No matching recording in `A/`
+- A CSV that can't be parsed, usually an unmatched double quote, with the line where parsing failed
+- A file not saved as UTF-8
+- Missing `speaker`, `timestamp` or `words` columns
+- Lines with no timestamp
 
-Individual lines get a red edge and a note, and are listed under "lines to check", when their timestamp isn't `H:MM:SS`, goes backwards, or the line has no words.
+Problem lines get a red edge and a note, and are listed under "lines to check", when their timestamp isn't `H:MM:SS`, goes out of order, or the line contains no words.
 
 </details>
 
@@ -371,13 +371,13 @@ print('Done.')
 <details>
 <summary><h2>Acknowledgments</h2></summary>
 
-The transcript editing workspace is built from the [Oral History as Data collections template](https://github.com/uidaholib/oral-history-collections-template) by the CollectionBuilder contributors and University of Idaho Library Digital Initiatives, used under the MIT License with the contributors' permission; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Transcription uses [Whisper](https://github.com/openai/whisper) and diarization uses [SpeechBrain](https://speechbrain.github.io/).
+The transcript editing workspace is built from the [Oral History as Data collections template](https://github.com/uidaholib/oral-history-collections-template) by the CollectionBuilder contributors and University of Idaho Library Digital Initiatives, used under the MIT License with the contributors' permission; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Transcription uses [Whisper](https://github.com/openai/whisper) and diarization uses [SpeechBrain](https://speechbrain.github.io/). The project logo is a collage adapted from _Tarjetas con Dibujos y Con Letras_ (Crane, 1975), a set of instructional ESL learning cards, used here under fair use for educational and non-commercial purposes. Special thanks to Digital Project Managers Maryelizabeth Koepele and Jack Kredell for their contributions to the project.
 
 </details>
 
 <details>
 <summary><h2>Background</h2></summary>
 
-This kit was developed over time to facilitate the transcription of the [Latah County Oral History Collection](https://www.lib.uidaho.edu/digital/lcoh/), an initiative conducted in the 1970's by the Latah County Historical Society and later digitized by the University of Idaho's [Center for Digital Inquiry and Learning](https://cdil.lib.uidaho.edu/) (CDIL) in 2015. The author developed this kit to transcribe the over 550 hour collection during the spring and summer of 2026 to make the material more discoverable for researchers and providing the Latah County community with easier access to its history. This kit was developed for implementation in the CDIL's [Oral History as Data](https://github.com/oralhistoryasdata) framework developed by Devin Becker, as well as the author's oral history transcript mining method outlined in [Distant Listening: Using Python and Apps Scripts to Text Mine and Tag Oral History Collections](https://journal.code4lib.org/articles/18286).
+This kit was developed over time to facilitate the transcription of the [Latah County Oral History Collection](https://www.lib.uidaho.edu/digital/lcoh/), an initiative conducted in the 1970's by the Latah County Historical Society and later digitized by the University of Idaho's [Center for Digital Inquiry and Learning](https://cdil.lib.uidaho.edu/) (CDIL) in 2015. The author developed this kit to transcribe the over 550 hour collection over the spring and summer of 2026 to make the material more discoverable for researchers and to provide the Latah County community with more transparent access to their history.
 
 </details>
