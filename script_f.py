@@ -16,7 +16,7 @@ WHISPER_MODEL = "medium"
 INPUT_DIR = "A"
 OUTPUT_DIR = "B"
 
-NUM_SPEAKER_LABELS = 1           # Cycle through this many "Speaker N" labels.
+NUM_SPEAKER_LABELS = 3           # Cycle through this many "Speaker N" labels.
 PAUSE_THRESHOLD_SECONDS = 2.0    # A gap at least this long is treated as a
                                   # likely turn change.
 # =============================================================================

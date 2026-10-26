@@ -15,7 +15,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 # =============================================================================
 # USER CONFIGURATION
 # =============================================================================
-NUM_SPEAKERS = 2
+NUM_SPEAKERS = 3
 WHISPER_MODEL = "medium"
 INPUT_DIR = "A"
 OUTPUT_DIR = "B"

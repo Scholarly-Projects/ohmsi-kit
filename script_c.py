@@ -14,7 +14,7 @@ from sklearn.cluster import AgglomerativeClustering
 # =============================================================================
 # USER CONFIGURATION
 # =============================================================================
-NUM_SPEAKERS = 2
+NUM_SPEAKERS = 3
 DISTANCE_THRESHOLD = 0.65
 WHISPER_MODEL = "large-v2"
 INPUT_DIR = "A"

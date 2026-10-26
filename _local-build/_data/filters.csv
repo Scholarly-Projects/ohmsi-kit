@@ -1,41 +1,13 @@
-tag,description
-agriculture,
-art,
-basque,
-boise,
-canada,
-china,
-clothing,
-conflict,
-crime,
-culture,
-food and drink,
-economy,
-education,
-environment,
-family,
-france,
-germany,
-greece,
-health,
-history,
-idaho,
-indigenous,
-ireland,
-italy,
-japan,
-labor,
-manufacturing,
-marsing,
-mexico,
-migration,
-nampa,
-pocatello,
-railroads and transportation,
-recreation,
-religion,
-spain,
-tags,
-technology,
-timber,
-wildlife,
+tag,terms,description
+agriculture,wheat ; homestead ; cattle ; hay ; farming ; garden ; harvest ; crop ; plow ; ranch ; orchard ; rural ; seed ; shovel ; tractor ; honey ; pasture ; dairy ; milking ; potato ; livestock ; berry ; fertilizer ; irrigation ; hoe ; manure ; poultry ; acreage ; baler ; thresher ; weeding ; grain crop ; farming equipment ; farmhand ; silage,subjects pertaining to agriculture
+clothing,shoes ; outfit ; hat ; clothing ; pants ; socks ; gloves ; cap ; boots ; shopping ; underwear ; overalls ; cotton ; apron ; skirt ; fashion ; uniform ; sweater ; jacket ; department store ; secondhand ; seamstress ; tailor ; flannel ; fabric ; jeans ; wardrobe ; retail ; stitching ; thrift ; plaid ; scarf ; apparel ; denim ; alterations ; sneakers ; t-shirt,subjects pertaining to clothing
+conflict,war ; army ; navy ; battle ; soldier ; troops ; military ; combat ; ROTC ; wounded ; ammunition ; militia ; infantry ; air force ; rebellion ; massacre ; marines ; battalion ; concentration camp ; martial law ; prisoner of war ; casualty ; siege ; garrison ; mutiny ; genocide ; invasion ; canon ; retaliation ; revolt,subjects pertaining to conflict
+crime,kill ; moonshine ; jail ; police ; gambling ; trial ; officer ; stealing ; murder ; crime ; arrest ; prison ; possession ; drugs ; bootleg ; gangs ; prostitution ; prisoner ; probation ; killer ; violence ; conviction ; murders ; rape ; madame ; prostitute ; detective ; robbery ; theft ; assault ; distribution ; arson ; whore ; corruption ; burglary ; investigation ; addiction ; detention ; fraud ; harass ; parole ; vandalism,subjects pertaining to crime
+culinary,milk ; bread ; coffee ; butter ; eggs ; beer ; chicken ; whiskey ; candy ; beef ; bacon ; salt ; cake ; wine ; tea ; pie ; cookies ; salmon ; cheese ; pork ; ham ; ice cream ; trout ; soup ; lard ; huckleberries ; cider ; sausage ; stew ; jam ; chocolate ; pepper ; vinegar ; soda ; jelly ; mush ; buttermilk ; salad ; sourdough ; rabbit ; raisins ; mutton ; venison ; pickles ; biscuit ; doughnuts ; jerky ; salt pork ; molasses ; sorghum ; baked beans ; cornbread ; applesauce ; hardtack ; root beer,subjects pertaining to food and drink
+economic,debt ; mortgage ; loan ; income ; employment ; salary ; wage ; pension ; hiring ; retirement ; investment ; savings ; paycheck ; profession ; earnings ; livelihood ; application ; promotion ; advancement ; manual labor ; layoff ; apprenticeship ; great depression ; vocation ; budgeting ; dismissal ; redundancy ; white-collar,subjects pertaining to economy
+education,school ; teacher ; study ; student ; learning ; library ; degree ; certificate ; test ; principal ; graduation ; classroom ; exam ; grant ; research ; athletics ; diploma ; scholarship ; homework ; administrator ; curriculum ; assignment ; counselor ; report card ; field trip ; special education ; tutoring ; extracurricular ; open house ; prom ; textbook,subjects pertaining to education
+family,mother ; father ; brother ; wife ; sister ; husband ; uncle ; child ; grandfather ; grandmother ; aunt ; cousin ; partner ; marriage ; wedding ; divorce ; nephew ; niece ; girlfriend ; parent ; boyfriend ; family tradition ; grandchild ; custody ; guardian ; family gathering ; orphan ; family dinner ; adoptive parent ; fiance ; foster child ; grandparent ; spouse,subjects pertaining to family
+health,doctor ; hospital ; nurse ; medicine ; flu ; insurance ; treatment ; surgery ; cough ; TB ; pain ; tuberculosis ; pneumonia ; emergency ; scarlet fever ; diphtheria ; headache ; typhoid fever ; smallpox ; appointment ; measles ; whooping cough ; consumption ; clinic ; pharmacy ; prescription ; asthma ; bandage ; ambulance ; diabetes ; quinsy ; vaccine ; colic ; croup ; injury ; recovery ; virus ; check up ; rabies ; influenza ; malaria ; quarantine ; blood poisoning ; gangrene ; bacteria ; cholera ; dysentery ; mental health ; sore throat ; vaccination ; blood pressure ; goiter ; mumps ; therapy ; Bright's disease ; dropsy ; infantile paralysis,subjects pertaining to health
+leisure,dance ; game ; lake ; dancing ; hunting ; fishing ; pool ; entertainment ; basketball ; football ; picnic ; hike ; activity ; camping ; swimming ; gardening ; sports ; beach ; hiking ; recreation ; campfire ; leisure ; pastime ; ski ; card game ; bonfire ; hobby ; photography ; barbecue ; marathon ; relaxation ; biking ; board game,subjects pertaining to leisure
+migration,border ; hobo ; immigration ; asylum ; migrant ; citizenship ; settler ; journey ; transient ; integration ; voyage ; dislocation ; naturalization ; deportation ; displaced person ; Ellis Island ; melting pot ; pilgrimage,subjects pertaining to migration
+religion,church ; minister ; sunday school ; bible ; religious ; preacher ; prayer ; revival ; priest ; faith ; sermon ; congregation ; choir ; holy ; salvation ; worship ; pastor ; temple ; scripture ; sacred ; ceremony ; communion ; deacon ; devout ; blessing ; hymn ; creed ; fellowship ; parish ; baptism ; mosque ; religious education ; devotion ; evangelism ; confession ; synagogue ; repentance ; sacrament,subjects pertaining to religion
