@@ -1,5 +1,5 @@
 """
-script_e_alt.py - damaged-recording tier: Silero VAD + SpeechBrain + Whisper.
+script_e.py - damaged-recording tier: Silero VAD + SpeechBrain + Whisper.
 """
 import sys
 import json
@@ -26,7 +26,7 @@ DISTANCE_THRESHOLD = 0.65   # Only used inside chunks when NUM_SPEAKERS is None
 WHISPER_MODEL = "medium"
 INPUT_DIR = "A"
 OUTPUT_DIR = "B"
-OUTPUT_SUFFIX = "_script_e_alt"
+OUTPUT_SUFFIX = "_script_e"
 SKIP_EXISTING = False       # Skip recordings that already have an output CSV
 
 # --- Whisper (keep identical to script_alt_a.py to share its transcript cache) ---

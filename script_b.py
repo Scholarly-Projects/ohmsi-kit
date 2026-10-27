@@ -1,21 +1,6 @@
 """
-script_alt_a.py - Whisper transcription + SpeechBrain speaker labels,
+script_b.py - Whisper transcription + SpeechBrain speaker labels,
 built to keep 5-minute-sample accuracy on 15-minute to 4-hour recordings.
-
-How it differs from the original script_a.py
-  1. Speaker clustering runs on 5-minute chunks (the scale where the original
-     works), then the chunk-level speakers are linked across the recording.
-     Spare clusters absorb coughs/tape noise, which in long files otherwise
-     steal speaker slots and force all real voices into one label. Only
-     segments of 2 s or more shape the clusters; short ones are matched after.
-  2. Whisper uses the original decoding settings (they gave the cleanest text),
-     plus a fixed seed so reruns produce identical output.
-  3. Audio is decoded once to 16 kHz mono and shared by Whisper and
-     SpeechBrain (about 1/5 of the memory of a 44.1 kHz stereo load).
-  4. Transcripts and embeddings are cached, so re-tuning the speaker settings
-     reruns in seconds instead of re-transcribing hours of audio.
-
-Files shorter than CHUNK_SEC + MIN_LAST_CHUNK_SEC are handled as one chunk.
 """
 import sys
 import json
@@ -41,7 +26,7 @@ DISTANCE_THRESHOLD = 0.65   # Only used inside chunks when NUM_SPEAKERS is None
 WHISPER_MODEL = "medium.en"
 INPUT_DIR = "A"
 OUTPUT_DIR = "B"
-OUTPUT_SUFFIX = "_script_alt_b"   # -> <file>_script_alt_a.csv
+OUTPUT_SUFFIX = "_script_b"   # -> <file>_script_alt_a.csv
 
 # --- Whisper ---
 SEED = 1234                 # Fixed seed: makes Whisper's fallback sampling repeatable

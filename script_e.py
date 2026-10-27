@@ -1,5 +1,5 @@
 """
-script_f_alt.py - last-resort tier: pause-based turns, no voice biometrics.
+script_f.py - last-resort tier: pause-based turns, no voice biometrics.
 """
 import sys
 import json
@@ -22,7 +22,7 @@ import whisper
 WHISPER_MODEL = "medium"
 INPUT_DIR = "A"
 OUTPUT_DIR = "B"
-OUTPUT_SUFFIX = "_script_f_alt"
+OUTPUT_SUFFIX = "_script_f"
 SKIP_EXISTING = False
 
 # --- Whisper (keep identical to script_alt_a.py to share its transcript cache) ---
