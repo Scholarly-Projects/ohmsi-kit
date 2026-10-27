@@ -14,7 +14,7 @@ This kit uses Whisper speech-to-text models and SpeechBrain _diarization_ (ident
 | Folder | Contents | Created by |
 | :---- | :---- | :---- |
 | `A` | Your original recordings (`.mp3`, `.m4a`, `.wav` or `.flac`; add files here before processing) | You |
-| `B` | Generated transcripts: one CSV per recording, with timestamps and dialogue separated by speaker | `script_a.py`–`script_f.py` |
+| `B` | Generated transcripts: one CSV per recording, with timestamps and dialogue separated by speaker | `script_a.py`–`script_e.py` |
 | `C` | The one transcript you're currently copy editing, opened in the editing workspace | You (copy a CSV from `B`) |
 | `D` | Finished, copy-edited transcripts | You (move the CSV from `C` when done) |
 
@@ -93,7 +93,6 @@ python script_b.py;
 python script_c.py;
 python script_d.py;
 python script_e.py;
-python script_f.py
 '
 ```
 
@@ -153,7 +152,7 @@ python script_a.py
 _Or run multiple scripts on the same audio files_
 
 ```powershell
-python script_a.py; python script_b.py; python script_c.py; python script_d.py; python script_e.py; python script_f.py
+python script_a.py; python script_b.py; python script_c.py; python script_d.py; python script_e.py
 ```
 
 </details>
@@ -171,11 +170,8 @@ python script_a.py; python script_b.py; python script_c.py; python script_d.py; 
 | `script_a` | The most basic and accurate script. The speaker number is the only setting. | Start here for every batch. |
 | `script_b` | Same as `script_a`, using Whisper's `medium.en` model. | `script_a` mislabeled speakers or misheard words. More accurate in some cases, but slower. |
 | `script_c` | Same as `script_a`, using Whisper's `large-v2` model. | Same as `script_b`, and slower still. Watch for hallucinated text, though it's much less common than with `large-v3-turbo`. |
-| `script_d` | Always applies a `distance_threshold` (default `.65`), even when `NUM_SPEAKERS` is set. Adds an `INTERJECTION` filter. | The interjection feature fixes a common misattribution: when a short response like "yeah," "okay," or "mhm" lands at the end of one speaker's segment, it is stripped off and moved to the start of the next line. That way it's credited to the person who was most likely replying, and a segment made up only of an interjection is folded into the next line instead of standing alone. |
-| `script_e` | Combines speaker identification with rules that find the interviewer by the questions they ask. `PAUSE_THRESHOLD` forces breaks in dialogue. | A backup for formal interviews with a clear question-and-answer pattern. The interviewer label comes from rules rather than the models, so expect some corrections during copy editing. |
-| `script_f` | Doesn't label speakers. Splits speech into blocks wherever a pause is longer than `PAUSE_THRESHOLD`. | A last resort for badly compromised audio, or when you only need an accurate transcript with no speakers. |
-
-For `script_f` recordings that still need speaker labels, run the audio through Adobe Premiere's transcription model, [using my workshop](https://aweymo-ui.github.io/premiere_transcripts/) and noting the [Remediating with Premiere](docs/remediate_premiere.md) file for reference. The Premiere transcription will likely have improved diarization but inferior translation than the script. Using the Premiere transcript as a base, update with Whisper's more accurate translation to salvage and synthesize results.
+| `script_d` | For extremely difficult recordings. Combines speaker identification with rules that find the interviewer by the questions they ask. `PAUSE_THRESHOLD` forces breaks in dialogue. | A backup for formal interviews with a clear question-and-answer pattern. The interviewer label comes from rules rather than the models. |
+| `script_e` | For a last resort. Doesn't label speakers. Splits speech into blocks wherever a pause is longer than `PAUSE_THRESHOLD`. | A last resort for badly compromised audio, or when you only need an accurate transcript with no speakers. |
 
 </details>
 
