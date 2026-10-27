@@ -25,12 +25,12 @@ OUTPUT_DIR = "B"
 OUTPUT_SUFFIX = "_script_f"
 SKIP_EXISTING = False
 
-# --- Whisper (keep identical to script_alt_a.py to share its transcript cache) ---
+# --- Whisper (keep identical to script_a.py to share its transcript cache) ---
 SEED = 1234
 BEAM_SIZE = None
 
 # --- Turns ---
-NUM_SPEAKER_LABELS = 2      # Most interviews are two people
+NUM_SPEAKER_LABELS = 3      
 PAUSE_THRESHOLD_SECONDS = 2.0
 SWITCH_MODE = "cues"        # "cues" or "every_pause" (original script_f behaviour)
 ALWAYS_SWITCH_SEC = None    # In "cues" mode, also flip on pauses at least this long (e.g. 6.0)
@@ -89,7 +89,7 @@ class PauseHeuristicTranscriber:
 
     # ----------------------------------------------------------------- cache
     def cache_key(self, audio_path):
-        """Identical to script_alt_a.py so the transcript cache is shared."""
+        """Identical to script_a.py so the transcript cache is shared."""
         st = audio_path.stat()
         settings = dict(file=audio_path.name, size=st.st_size, mtime=int(st.st_mtime),
                         model=self.model_name, seed=SEED, beam=BEAM_SIZE,
@@ -104,7 +104,7 @@ class PauseHeuristicTranscriber:
             if isinstance(data, dict) and data.get("format") == 2:
                 logger.info(f"Using cached transcript: {cache_file.name}")
                 return data["segments"]
-            logger.info("Cached transcript has no word timings (older script_alt_a); re-transcribing")
+            logger.info("Cached transcript has no word timings (older script_a); re-transcribing")
         if self.whisper_model is None:
             logger.info(f"Loading Whisper '{self.model_name}'...")
             self.whisper_model = whisper.load_model(self.model_name, device=self.device)

@@ -21,12 +21,12 @@ from sklearn.cluster import AgglomerativeClustering
 # =============================================================================
 # USER CONFIGURATION
 # =============================================================================
-NUM_SPEAKERS = 3            # Maximum speakers per recording (same meaning as before)
+NUM_SPEAKERS = 2            # Maximum speakers per recording (same meaning as before)
 DISTANCE_THRESHOLD = 0.65   # Only used inside chunks when NUM_SPEAKERS is None
 WHISPER_MODEL = "medium.en"
 INPUT_DIR = "A"
 OUTPUT_DIR = "B"
-OUTPUT_SUFFIX = "_script_b"   # -> <file>_script_alt_a.csv
+OUTPUT_SUFFIX = "_script_b" 
 
 # --- Whisper ---
 SEED = 1234                 # Fixed seed: makes Whisper's fallback sampling repeatable

@@ -21,7 +21,7 @@ from sklearn.cluster import AgglomerativeClustering
 # =============================================================================
 # USER CONFIGURATION
 # =============================================================================
-NUM_SPEAKERS = 3            # Maximum speakers per recording
+NUM_SPEAKERS = 2            # Maximum speakers per recording
 DISTANCE_THRESHOLD = 0.65   # Only used inside chunks when NUM_SPEAKERS is None
 WHISPER_MODEL = "medium"
 INPUT_DIR = "A"
@@ -29,7 +29,6 @@ OUTPUT_DIR = "B"
 OUTPUT_SUFFIX = "_script_e"
 SKIP_EXISTING = False       # Skip recordings that already have an output CSV
 
-# --- Whisper (keep identical to script_alt_a.py to share its transcript cache) ---
 SEED = 1234
 BEAM_SIZE = None
 
@@ -42,7 +41,6 @@ MAX_REGION_SEC = 10.0       # Long regions are split (at pauses) so one region ~
 HALLUCINATIONS = "flag"     # "flag" = prefix with [?], "drop" = remove, "keep" = leave as is
 MIN_VAD_COVERAGE = 0.2      # Sentences with less of their time inside VAD speech are suspect
 
-# --- Speaker clustering (same meaning as script_alt_a.py) ---
 CHUNK_SEC = 300
 MIN_LAST_CHUNK_SEC = 120
 MIN_EMBED_SEC = 0.5
@@ -140,7 +138,7 @@ class DamagedAudioTranscriber:
 
     # ----------------------------------------------------------------- cache
     def cache_key(self, audio_path):
-        """Identical to script_alt_a.py so the transcript cache is shared."""
+        """Identical to script_a.py so the transcript cache is shared."""
         st = audio_path.stat()
         settings = dict(file=audio_path.name, size=st.st_size, mtime=int(st.st_mtime),
                         model=self.model_name, seed=SEED, beam=BEAM_SIZE,
@@ -156,7 +154,7 @@ class DamagedAudioTranscriber:
             if isinstance(data, dict) and data.get("format") == 2:
                 logger.info(f"Using cached transcript: {cache_file.name}")
                 return data["segments"]
-            logger.info("Cached transcript has no word timings (older script_alt_a); re-transcribing")
+            logger.info("Cached transcript has no word timings (older script_a); re-transcribing")
 
         if self.whisper_model is None:
             logger.info(f"Loading Whisper '{self.model_name}'...")
@@ -215,7 +213,7 @@ class DamagedAudioTranscriber:
             np.savez(cache_file, idx=idx, emb=emb)
         return idx, emb
 
-    # ------------------------------------------------- clustering (= alt_a)
+    # ------------------------------------------------- clustering (= _a)
     def local_cluster(self, emb):
         n = len(emb)
         if n < 2:
