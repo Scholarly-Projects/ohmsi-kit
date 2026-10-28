@@ -26,7 +26,7 @@ DISTANCE_THRESHOLD = 0.65   # Only used inside chunks when NUM_SPEAKERS is None
 WHISPER_MODEL = "medium"
 INPUT_DIR = "A"
 OUTPUT_DIR = "B"
-OUTPUT_SUFFIX = "_script_e"
+OUTPUT_SUFFIX = "_script_d"
 SKIP_EXISTING = False       # Skip recordings that already have an output CSV
 
 SEED = 1234

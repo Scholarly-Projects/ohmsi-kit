@@ -22,7 +22,7 @@ import whisper
 WHISPER_MODEL = "medium"
 INPUT_DIR = "A"
 OUTPUT_DIR = "B"
-OUTPUT_SUFFIX = "_script_f"
+OUTPUT_SUFFIX = "_script_e"
 SKIP_EXISTING = False
 
 # --- Whisper (keep identical to script_a.py to share its transcript cache) ---
